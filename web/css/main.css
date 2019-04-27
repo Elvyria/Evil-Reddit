@@ -1,0 +1,36 @@
+* {
+	margin: auto;
+}
+
+body {
+	font-family: IBMPlexSans, Arial, sans-serif;
+}
+
+#reddit-ribbon {
+	display: flex;
+	flex-direction: column;
+	width: 648px;
+}
+
+.reddit-post {
+	display: flex;
+	flex-direction: column;
+	background-color: rgb(26, 26, 27);
+	margin-bottom: 10px;
+	padding: 8px 4px 4px 4px;
+	border-radius: 4px;
+}
+
+.reddit-post > h2 {
+	color: rgb(215, 218, 220);
+	font-size: 18px;
+	font-weight: 500;
+	line-height: 22px;
+	padding: 0 10px;
+}
+
+.reddit-post > img {
+	max-height: 512px;
+	max-width: 100%;
+	margin-top: 8px;
+}
