@@ -10,7 +10,8 @@ function addToRibbon(post) {
 	div.className = "reddit-post";
 
 	let h2 = document.createElement("h2");
-	h2.textContent = post.title;
+	// Such posts require innerHTML instead of textContent (reddit.com/r/awwnime/comments/bhew2y/the_rainy_season_hero_froppy_3_boku_no_hero/)
+	h2.innerHTML = post.title;
 	div.appendChild(h2);
 
 	if (isImage(post.url)) {
@@ -19,8 +20,7 @@ function addToRibbon(post) {
 		div.appendChild(img);
 	} else {
 		if (post.url.includes("imgur.com/a/")) {
-			frame = imgur(post.url);
-			div.appendChild(frame);
+			div.appendChild(imgur(post.url));
 		}
 	}
 
