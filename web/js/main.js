@@ -11,13 +11,36 @@ function addToRibbon(post) {
 
 	let h2 = document.createElement("h2");
 	h2.textContent = post.title;
-
-	let img = document.createElement("img");
-	img.setAttribute("data-src", post.url);
-
 	div.appendChild(h2);
-	div.appendChild(img);
+
+	if (isImage(post.url)) {
+		let img = document.createElement("img");
+		img.setAttribute("data-src", post.url);
+		div.appendChild(img);
+	} else {
+		if (post.url.includes("imgur.com/a/")) {
+			frame = imgur(post.url);
+			div.appendChild(frame);
+		}
+	}
+
 	ribbon.appendChild(div);
+}
+
+function isImage(url) {
+	let result = false;
+	let exts = [".jpg", ".png", ".gif"];
+	exts.forEach(e => { if (url.endsWith(e)) { result = true; } } );
+	return result;
+}
+
+function imgur(url) {
+	let frame = document.createElement("iframe");
+	frame.setAttribute("scrolling", "no");
+	frame.setAttribute("frameborder", 0);
+	frame.src = url + "/embed?pub=true";
+
+	return frame;
 }
 
 function loadMore(subreddit, after = "", limit = "") {
