@@ -45,6 +45,45 @@ body {
 	margin-top: 8px;
 }
 
+.md {
+	font-family: Noto Sans, Arial, sans-serif;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 21px;
+	color: rgb(215, 218, 220);
+	width: 606px;
+
+	mask-image: linear-gradient(180deg,#000 60%,transparent);
+	overflow: hidden;
+	padding: 5px 8px 10px;
+}
+
+.md h1 {
+	font-family: Noto Sans, Arial, sans-serif;
+	font-size: 22px;
+	font-weight: 400;
+	line-height: 26px;
+	margin-bottom: 8px;
+	margin-top: 1.4em;
+}
+
+.md p {
+	padding: 0.25em 0px;
+}
+
+.md hr {
+	border-color: rgba(215, 218, 220, 0.2) currentcolor currentcolor;
+	border-style: solid none none;
+	border-width: 1px 0px 0px;
+	border-image: none 100% / 1 / 0 stretch;
+	height: 1px;
+	margin: 8px 0px;
+}
+
+.md a {
+	color: rgb(79, 188, 255);
+}
+
 .reddit-post > .imgur {
 	height: 512px;
 }

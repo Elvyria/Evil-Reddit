@@ -11,7 +11,7 @@ function addToRibbon(post) {
 
 	let h2 = document.createElement("h2");
 	// Such posts require innerHTML instead of textContent (reddit.com/r/awwnime/comments/bhew2y/the_rainy_season_hero_froppy_3_boku_no_hero/)
-	h2.innerHTML = post.title;
+	h2.innerText = post.title;
 	div.appendChild(h2);
 
 	switch(post.post_hint) {
@@ -28,6 +28,10 @@ function addToRibbon(post) {
 				div.appendChild(imgur(post.url));
 			}
 			break;
+		default:
+			let textNode = document.createElement("div");
+			div.innerHTML += decodeHTML(post.selftext_html);
+
 	}
 
 	ribbon.appendChild(div);
