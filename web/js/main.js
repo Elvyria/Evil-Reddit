@@ -14,33 +14,42 @@ function addToRibbon(post) {
 	h2.innerHTML = post.title;
 	div.appendChild(h2);
 
-	if (isImage(post.url)) {
-		let img = document.createElement("img");
-		img.setAttribute("data-src", post.url);
-		div.appendChild(img);
-	} else {
-		if (post.url.includes("imgur.com/a/")) {
-			div.appendChild(imgur(post.url));
-		}
+	switch(post.post_hint) {
+		case "image":
+			let img = document.createElement("img");
+			img.setAttribute("data-src", post.url);
+			div.appendChild(img);
+			break;
+		case "rich:video":
+			break;
+		case "link":
+			if (post.url.includes("imgur.com/a/")) {
+				div.appendChild(imgur(post.url));
+			}
+			break;
 	}
 
 	ribbon.appendChild(div);
 }
 
-function isImage(url) {
-	let result = false;
-	let exts = [".jpg", ".png", ".gif"];
-	exts.forEach(e => { if (url.endsWith(e)) { result = true; } } );
-	return result;
-}
-
 function imgur(url) {
 	let frame = document.createElement("iframe");
-	frame.setAttribute("scrolling", "no");
-	frame.setAttribute("frameborder", 0);
+	frame.scrolling = "no";
+	frame.frameBorder = 0;
 	frame.src = url + "/embed?pub=true";
+	frame.className = "imgur";
 
 	return frame;
+}
+
+function youtube(url) {
+	url = "https://www.youtube.com/embed/yY7iGa4t9-I?list=PLZd4B4z5ZVUuuvti4bSlOvb1iqmdsgJRw"
+	embedURL = ""
+	let frame = document.createElement("iframe");
+	frame.setAttribute("allow", "accelerometer; encrypted-media; gyroscope; picture-in-picture");
+	frame.height = "512";
+	frame.src = "";
+
 }
 
 function loadMore(subreddit, after = "", limit = "") {
