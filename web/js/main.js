@@ -21,6 +21,7 @@ function addToRibbon(post) {
 			div.appendChild(img);
 			break;
 		case "rich:video":
+			div.innerHTML += decodeHTML(post.media.oembed.html);
 			break;
 		case "link":
 			if (post.url.includes("imgur.com/a/")) {
@@ -32,6 +33,12 @@ function addToRibbon(post) {
 	ribbon.appendChild(div);
 }
 
+function decodeHTML(html) {
+	let textarea = document.createElement('textarea');
+	textarea.innerHTML = html;
+	return textarea.value;
+}
+
 function imgur(url) {
 	let frame = document.createElement("iframe");
 	frame.scrolling = "no";
@@ -40,16 +47,6 @@ function imgur(url) {
 	frame.className = "imgur";
 
 	return frame;
-}
-
-function youtube(url) {
-	url = "https://www.youtube.com/embed/yY7iGa4t9-I?list=PLZd4B4z5ZVUuuvti4bSlOvb1iqmdsgJRw"
-	embedURL = ""
-	let frame = document.createElement("iframe");
-	frame.setAttribute("allow", "accelerometer; encrypted-media; gyroscope; picture-in-picture");
-	frame.height = "512";
-	frame.src = "";
-
 }
 
 function loadMore(subreddit, after = "", limit = "") {
@@ -64,7 +61,7 @@ function loadMore(subreddit, after = "", limit = "") {
 		});
 }
 
-loadMore("/r/awwnime/", ribbon.lastChild.id);
+loadMore("/r/dfo/", ribbon.lastChild.id);
 
 window.onscroll = function() {
     if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
