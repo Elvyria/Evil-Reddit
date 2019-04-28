@@ -70,7 +70,7 @@ function deviantart(url) {
 	let img = document.createElement("img");
 	// TODO: Handle not json responses.
 	// Why we can't do it without jquery or any 3rd party lib
-	// https://stackoverflow.com/questions/43824511/fetch-error-no-access-control-allow-origin-header-is-present-on-the-requested
+	// https://stackoverflow.com/questions/43471288/how-to-use-jsonp-on-fetch-axios-cross-site-requests/43474806#43474806
 	$.getJSON(backendURL + url, json => { img.setAttribute("data-src", json.url); img.setAttribute("data-loaded", false); observer.observe(); } );
 	return img;
 }
