@@ -1,9 +1,9 @@
 var $ribbon = $(".reddit-ribbon");
 var $searchbar = $("input");
 
-var flex = new FlexSearch();
+let flex = new FlexSearch();
 
-var lastpost = "";
+let lastpost = "";
 
 var reddit = { 
 	subreddit: "",
@@ -15,8 +15,6 @@ document.addEventListener("lazyloaded", function(e) {
 	$ribbon.isotope("layout");
 });
 
-loadSubreddit("/r/awwnime");
-
 $searchbar.keyup((e) => {
 	// Global Subreddit search through API
 	if (e.keyCode == 13) {
@@ -26,7 +24,10 @@ $searchbar.keyup((e) => {
 	}
 
 	$ribbon.isotope();
+	$ribbon.isotope('layout');
 });
+
+loadSubreddit("/r/awwnime");
 
 function loadSubreddit(subreddit) {
 	clearRibbon();
@@ -66,8 +67,9 @@ function loadSubreddit(subreddit) {
 function clearRibbon() {
 	$(".reddit-ribbon").empty();
 	flex.clear();
-	// TODO: Check if initialized before destroying
-	$ribbon.isotope('destroy');
+	if (Isotope.data($ribbon[0])) {
+		$ribbon.isotope('destroy');
+	}
 }
 
 function loadPosts(subreddit, sort = "hot", after = "", limit = "") {
@@ -104,10 +106,9 @@ function createPost(post) {
 	h2.innerHTML = post.title;
 	div.appendChild(h2);
 
-	// TODO: Direct links (for search and source purpose)
-	// let a = document.createElement("a");
-	// a.href = post.url;
-	// div.appendChild(a);
+	let a = document.createElement("a");
+	a.href = post.url;
+	a.textContent = post.url.replace("https://", "").replace("www.", "");
 
 	// TODO: Simplify
 	switch(post.post_hint) {
@@ -137,6 +138,7 @@ function createPost(post) {
 			div.innerHTML += decodeHTML(post.selftext_html);
 	}
 
+	div.appendChild(a);
 	return div
 }
 
@@ -151,6 +153,7 @@ function decodeHTML(html) {
 	return textarea.value;
 }
 
+// TODO: Imgur sizes still suck, fix me pls
 function imgur(url) {
 	let frame = document.createElement("iframe");
 	frame.scrolling = "no";

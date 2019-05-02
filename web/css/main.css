@@ -39,9 +39,13 @@ body {
 	background-color: rgb(26, 26, 27);
 	margin: 0 0 10px 0;
 	padding: 8px 4px 4px 4px;
+	border: 1px solid transparent;
 	border-radius: 4px;
-	/*width: 15%;*/
 	width: 310px;
+}
+
+.reddit-post:hover {
+	border: 1px solid rgb(129, 131, 132);
 }
 
 .reddit-post > h2 {
@@ -55,8 +59,19 @@ body {
 	margin: 0;
 }
 
+.reddit-post > a {
+	display: block;
+	font-size: 12px;
+	text-decoration: none;
+	color: rgb(79, 188, 255);
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	width: 200px;
+}
+
 .reddit-post > :nth-child(2) {
-	max-width: 100%;
+	width: 100%;
 	margin: 8px auto 0 auto;
 }
 
