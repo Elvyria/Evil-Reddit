@@ -1,15 +1,99 @@
-var ribbon = document.querySelector(".reddit-ribbon");
-let observer = lozad(".reddit-post > img", {
-	loaded: function(elem) {
-		elem.removeAttribute("data-src");
-	}
+var $ribbon = $(".reddit-ribbon");
+var $searchbar = $("input");
+
+var flex = new FlexSearch();
+
+var lastpost = "";
+
+var reddit = { 
+	subreddit: "",
+	sortmethod: "hot",
+	time: "",
+};
+
+document.addEventListener("lazyloaded", function(e) {
+	$ribbon.isotope("layout");
 });
 
-function addPosts(posts) {
-	posts.forEach((item, i) => addToRibbon(item.data));
+loadSubreddit("/r/awwnime");
+
+$searchbar.keyup((e) => {
+	// Global Subreddit search through API
+	if (e.keyCode == 13) {
+		request = searchSubreddit($searchbar.val(), reddit.subreddit, reddit.sortmethod);
+		request.then(posts => {
+		});
+	}
+
+	$ribbon.isotope();
+});
+
+function loadSubreddit(subreddit) {
+	clearRibbon();
+
+	$ribbon.isotope({
+		percentPosition: true,
+		itemSelector: '.reddit-post',
+		layoutMode: 'masonry',
+		masonry: {
+			fitWidth: true,
+			gutter: 10
+		},
+		filter: function() {
+			let request = $searchbar.val();
+			if (request == "") {
+				return true;
+			}
+			let result = flex.search(request);
+
+			return result.includes($(this).index());
+		}
+	});
+
+	loadPosts(subreddit, "hot")
+
+	reddit.subreddit = subreddit;
+
+	// TODO: Should start loading not at the bottom, but somewhere close to it.
+	// window.onscroll = function() {
+		// if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+			// // TODO: fix multiple triggers
+			// loadPosts(subreddit, reddit.sortmethod, lastpost);
+		// }
+	// };
 }
 
-function addToRibbon(post) {
+function clearRibbon() {
+	$(".reddit-ribbon").empty();
+	flex.clear();
+	// TODO: Check if initialized before destroying
+	$ribbon.isotope('destroy');
+}
+
+function loadPosts(subreddit, sort = "hot", after = "", limit = "") {
+	let url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`;
+
+	$.getJSON(url)
+		.then(json => json.data.children)
+		.then(posts => addPosts(posts));
+}
+
+function addPosts(posts) {
+	posts.forEach(post => {
+		div = createPost(post.data);
+		$ribbon.append(div);
+	});
+
+	$ribbon.isotope('reloadItems');
+	$ribbon.isotope();
+
+	// Add text in posts to flex for indexing
+	$ribbon.children().each(function(i, post) { flex.add(i, $(post).text()) });
+
+	lastpost = posts[posts.length - 1].data.name;
+}
+
+function createPost(post) {
 	let div = document.createElement("div");
 	div.id = post.name;
 	div.className = "reddit-post";
@@ -17,18 +101,25 @@ function addToRibbon(post) {
 	let h2 = document.createElement("h2");
 	// Such posts require innerHTML instead of textContent
 	// (reddit.com/r/awwnime/comments/bhew2y/the_rainy_season_hero_froppy_3_boku_no_hero/)
-	h2.innerText = post.title;
+	h2.innerHTML = post.title;
 	div.appendChild(h2);
+
+	// TODO: Direct links (for search and source purpose)
+	// let a = document.createElement("a");
+	// a.href = post.url;
+	// div.appendChild(a);
 
 	// TODO: Simplify
 	switch(post.post_hint) {
 		case "image":
 			let img = document.createElement("img");
+			img.className = "lazyload"
 			img.setAttribute("data-src", post.url);
 			div.appendChild(img);
 			break;
 		case "rich:video":
 			div.innerHTML += decodeHTML(post.media.oembed.html);
+			div.querySelector("iframe").className = "lazyload";
 			break;
 		case "link":
 			// TODO: Extract to prevent switch ladders.
@@ -46,7 +137,12 @@ function addToRibbon(post) {
 			div.innerHTML += decodeHTML(post.selftext_html);
 	}
 
-	ribbon.appendChild(div);
+	return div
+}
+
+function searchSubreddit(query, subreddit = "", sort = "", after = "") {
+	let url = `https://reddit.com${subreddit}/search/.json?q=${query}&restrict_sr=1&jsonp=?`
+	return $.getJSON(url).then(json => json.data.children);
 }
 
 function decodeHTML(html) {
@@ -68,29 +164,12 @@ function imgur(url) {
 function deviantart(url) {
 	let backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url=";
 	let img = document.createElement("img");
-	// TODO: Handle not json responses.
-	// Why we can't do it without jquery or any 3rd party lib
-	// https://stackoverflow.com/questions/43471288/how-to-use-jsonp-on-fetch-axios-cross-site-requests/43474806#43474806
-	$.getJSON(backendURL + url, json => { img.setAttribute("data-src", json.url); img.setAttribute("data-loaded", false); observer.observe(); } );
+	img.className = "lazyload";
+
+	$.getJSON(backendURL + url, json => {
+		img.setAttribute("data-src", json.url);
+		img.setAttribute("data-loaded", false);
+	});
+
 	return img;
 }
-
-function loadMore(subreddit, after = "", limit = "") {
-	let url = "http://www.reddit.com" + subreddit + ".json" + "?after=" + after + "&limit=" + limit;
-	// TODO: Handle not json responses.
-	fetch(url)
-		.then(resp => resp.json())
-		.then(json => {
-			addPosts(json.data.children)
-			observer.observe();
-		});
-}
-
-loadMore("/r/dfo/", ribbon.lastChild.id);
-
-// TODO: Should start loading not at the bottom, but somewhere close to it.
-window.onscroll = function() {
-    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
-	    loadMore("/r/dfo/", ribbon.lastChild.id);
-    }
-};

@@ -1,32 +1,47 @@
-* {
-	margin: auto;
-}
-
 body {
 	font-family: IBMPlexSans, Arial, sans-serif;
+	overflow-x: hidden;
 }
 
-#reddit-ribbon {
-	display: flex;
-	flex-direction: column;
-	width: 648px;
+.search {
+	width: 200px;
+	margin: 0 auto;
 }
 
-.pinterested {
-	flex-wrap: wrap;
-	align-items: flex-start;
-	flex-direction: row !important;
-	width: 100% !important;
+.search > input {
+	text-align: center;
+	width: 100%;
+}
+
+.search > input:focus {
+	outline: none;
+}
+
+.reddit-ribbon {
+	margin: 70px auto 0 auto;
+	/*display: flex;*/
+	/*flex-direction: column;*/
+	/*width: 648px;*/
+}
+
+/*.pinterested {*/
+	/*flex-wrap: wrap;*/
+	/*align-items: flex-start;*/
+	/*flex-direction: row !important;*/
+	/*width: 100% !important;*/
+/*}*/
+
+.sizer {
+	width: 15vw;
 }
 
 .reddit-post {
-	display: flex;
-	flex-direction: column;
 	background-color: rgb(26, 26, 27);
-	margin-top: 0;
-	margin-bottom: 10px;
+	margin: 0 0 10px 0;
 	padding: 8px 4px 4px 4px;
 	border-radius: 4px;
+	/*width: 15%;*/
+	width: 310px;
 }
 
 .reddit-post > h2 {
@@ -37,12 +52,16 @@ body {
 	font-weight: 500;
 	line-height: 22px;
 	padding: 0 10px;
+	margin: 0;
 }
 
 .reddit-post > :nth-child(2) {
-	max-height: 512px;
 	max-width: 100%;
-	margin-top: 8px;
+	margin: 8px auto 0 auto;
+}
+
+.reddit-post > .imgur {
+	height: 512px;
 }
 
 .md {
@@ -82,8 +101,4 @@ body {
 
 .md a {
 	color: rgb(79, 188, 255);
-}
-
-.reddit-post > .imgur {
-	height: 512px;
 }
