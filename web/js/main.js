@@ -3,6 +3,7 @@ var $searchbar = $("input");
 
 let flex = new FlexSearch();
 
+let postWidth = $(".reddit-post").width();
 let lastpost = "";
 
 var reddit = { 
@@ -55,13 +56,17 @@ function loadSubreddit(subreddit) {
 
 	reddit.subreddit = subreddit;
 
-	// TODO: Should start loading not at the bottom, but somewhere close to it.
-	// window.onscroll = function() {
-		// if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
-			// // TODO: fix multiple triggers
-			// loadPosts(subreddit, reddit.sortmethod, lastpost);
-		// }
-	// };
+	let loading = false;
+	window.addEventListener("scroll", function() {
+		if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+			// TODO: Searchbar shouldn't work this way
+			if (!loading && $searchbar.val() == "") {
+				loading = true;
+				loadPosts(subreddit, reddit.sortmethod, lastpost)
+					.then(() => loading = false);
+			}
+		}
+	});
 }
 
 function clearRibbon() {
@@ -75,9 +80,9 @@ function clearRibbon() {
 function loadPosts(subreddit, sort = "hot", after = "", limit = "") {
 	let url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`;
 
-	$.getJSON(url)
-		.then(json => json.data.children)
-		.then(posts => addPosts(posts));
+	return $.getJSON(url)
+		  .then(json => json.data.children)
+		  .then(posts => addPosts(posts));
 }
 
 function addPosts(posts) {
@@ -114,8 +119,12 @@ function createPost(post) {
 	switch(post.post_hint) {
 		case "image":
 			let img = document.createElement("img");
+			let previewURL = post.preview.images[0].source.url.replace(/&amp;/g, "&");
+			// Killing quality, but saving a bunch of bandwidth.
+			// Probably should do speed test before loading subreddit.
+			// post.preview.images[0].resolutions[2].url.replace(/&amp;/g, "&");
 			img.className = "lazyload"
-			img.setAttribute("data-src", post.url);
+			img.setAttribute("data-src", previewURL);
 			div.appendChild(img);
 			break;
 		case "rich:video":
@@ -139,6 +148,7 @@ function createPost(post) {
 	}
 
 	div.appendChild(a);
+
 	return div
 }
 
