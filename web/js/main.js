@@ -183,6 +183,7 @@ function decodeHTML(html) {
 }
 
 
+
 /**
  * @param {string} url
  */
@@ -202,7 +203,7 @@ async function imgur(url) {
 			throw new Error('Unexpected input: ' + url)
 		}
 
-		const result = fetch(`https://api.imgur.com/3/${parsedUrl}/`, {
+		const result = fetch(`https://api.imgur.com/3/${parsedUrl}`, {
 			headers: {
 				Authorization: `Client-ID ${clientId}`
 			}
@@ -213,6 +214,7 @@ async function imgur(url) {
 		return (await (await result).json()).data
 	}
 }
+
 
 
 /**
