@@ -229,15 +229,17 @@ async function deviantart(url) {
 
 
 /**
- * @param {string|Promise<string>} url
+ * @param {string|Promise<string>} promise
  */
-async function getHtmlImg(url) {
-	await url
+async function getHtmlImg(promise) {
 
 	const img = document.createElement("img")
 	img.className = "lazyLoad"
-	img.setAttribute("data-src", url);
-	img.setAttribute("data-loaded", false);
+
+	promise.then( (data) => {
+		img.setAttribute("data-src", data.url);
+		img.setAttribute("data-loaded", false);
+	})
 
 	return img
 }
