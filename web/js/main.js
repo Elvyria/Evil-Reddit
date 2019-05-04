@@ -93,7 +93,6 @@ function loadPosts(subreddit, sort = "hot", after = "", limit = "") {
 async function addPosts(posts) {
 	for (i of posts) {
 		div = await createPost(i.data);
-		console.log(div)
 		$ribbon.append(div);
 	}
 
@@ -197,11 +196,6 @@ async function imgur(url) {
 	async function init() {
 		const parsedUrl = url.replace('https://imgur.com', '').replace('/a/', '/album/')
 
-		console.log(parsedUrl)
-
-		if (!parsedUrl) {
-			throw new Error('Unexpected input: ' + url)
-		}
 
 		const result = fetch(`https://api.imgur.com/3/${parsedUrl}`, {
 			headers: {
@@ -209,7 +203,6 @@ async function imgur(url) {
 			}
 		})
 
-		console.log(result)
 
 		return (await (await result).json()).data
 	}
