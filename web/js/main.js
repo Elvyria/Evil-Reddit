@@ -4,17 +4,14 @@ const flex = new FlexSearch()
 // const postWidth = $(".reddit-post").width()
 const reddit = {
 	subreddit: "",
-	sortmethod: "hot",
+	sortMethod: "hot",
 	time: "",
 }
-const ribbonIso = {
-	init: new Isotope(ribbon),
-	set(config) {
-		this.init = new Isotope(ribbon, config)
-	}
-}
 
-let lastpost = ""
+let ribbonIso = null
+let lastPostId = ""
+let isLoading = false
+let enabledAutoload = false
 
 
 
@@ -22,9 +19,27 @@ loadSubreddit("/r/awwnime")
 
 
 
+document.addEventListener("lazyloaded", () => {
+	ribbonIso.layout()
+})
+
+window.addEventListener("scroll", function () {
+	if (!enabledAutoload) { return }
+	if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+
+		// TODO: Searchbar shouldn't work this way
+		if (!isLoading && searchbar.value == "") {
+			isLoading = true
+
+			loadReddit(reddit.subreddit, reddit.sortMethod, lastPostId)
+				.then(() => isLoading = false)
+		}
+	}
+})
+
 searchbar.addEventListener('keyup', (e) => {
 
-	ribbonIso.init.arrange({
+	ribbonIso.arrange({
 		filter(num, elm) {
 			const request = searchbar.value
 
@@ -36,11 +51,7 @@ searchbar.addEventListener('keyup', (e) => {
 
 			return result.includes([...elm.parentNode.children].indexOf(elm))
 		}
-	});
-})
-
-document.addEventListener("lazyloaded", () => {
-	ribbonIso.init.layout()
+	})
 })
 
 
@@ -49,8 +60,7 @@ function loadSubreddit(subreddit) {
 
 	clearRibbon()
 
-
-	ribbonIso.set({
+	ribbonIso = new Isotope(ribbon, {
 		percentPosition: true,
 		itemSelector: '.reddit-post',
 		layoutMode: 'masonry',
@@ -61,24 +71,10 @@ function loadSubreddit(subreddit) {
 	})
 
 
-
-	loadReddit(subreddit, reddit.sortmethod)
+	loadReddit(subreddit, reddit.sortMethod)
 
 	reddit.subreddit = subreddit
-
-	let loading = false
-	
-	window.addEventListener("scroll", function () {
-		if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
-			// TODO: Searchbar shouldn't work this way
-			if (!loading && searchbar.value == "") {
-				loading = true
-
-				loadReddit(subreddit, reddit.sortmethod, lastpost)
-					.then(() => loading = false)
-			}
-		}
-	})
+	enabledAutoload = true
 }
 
 
@@ -92,7 +88,7 @@ function clearRibbon() {
 	flex.clear()
 
 	if (Isotope.data(ribbon)) {
-		ribbonIso.init.destroy()
+		ribbonIso.destroy()
 	}
 }
 
@@ -116,8 +112,8 @@ async function addPosts(posts) {
 		ribbon.appendChild(div)
 	}
 
-	ribbonIso.init.reloadItems()
-	ribbonIso.set()
+	ribbonIso.reloadItems()
+	ribbonIso.arrange()
 
 	console.log(flex)
 
@@ -129,7 +125,7 @@ async function addPosts(posts) {
 	});
 
 
-	lastpost = posts[posts.length - 1].data.name
+	lastPostId = posts[posts.length - 1].data.name
 }
 
 
