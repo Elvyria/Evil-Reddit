@@ -1,0 +1,119 @@
+body {
+	font-family: IBMPlexSans, Arial, sans-serif;
+	overflow-x: hidden;
+}
+
+.search {
+	width: 200px;
+	margin: 0 auto;
+}
+
+.search > input {
+	text-align: center;
+	width: 100%;
+}
+
+.search > input:focus {
+	outline: none;
+}
+
+.reddit-ribbon {
+	margin: 70px auto 0 auto;
+	/*display: flex;*/
+	/*flex-direction: column;*/
+	/*width: 648px;*/
+}
+
+/*.pinterested {*/
+	/*flex-wrap: wrap;*/
+	/*align-items: flex-start;*/
+	/*flex-direction: row !important;*/
+	/*width: 100% !important;*/
+/*}*/
+
+.sizer {
+	width: 15vw;
+}
+
+.reddit-post {
+	background-color: rgb(26, 26, 27);
+	margin: 0 0 10px 0;
+	padding: 8px 4px 4px 4px;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	width: 310px;
+}
+
+.reddit-post:hover {
+	border: 1px solid rgb(129, 131, 132);
+}
+
+.reddit-post > h2 {
+	color: rgb(215, 218, 220);
+	overflow: hidden;
+	white-space: nowrap;
+	font-size: 18px;
+	font-weight: 500;
+	line-height: 22px;
+	padding: 0 10px;
+	margin: 0;
+}
+
+.reddit-post > a {
+	display: block;
+	font-size: 12px;
+	text-decoration: none;
+	color: rgb(79, 188, 255);
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	width: 200px;
+}
+
+.reddit-post > :nth-child(2) {
+	width: 100%;
+	margin: 8px auto 0 auto;
+}
+
+.reddit-post > .imgur {
+	height: 512px;
+}
+
+.md {
+	font-family: Noto Sans, Arial, sans-serif;
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 21px;
+	color: rgb(215, 218, 220);
+	width: 606px;
+
+	mask-image: linear-gradient(180deg,#000 60%,transparent);
+	overflow: hidden;
+	padding: 5px 8px 10px;
+}
+
+.md h1 {
+	font-family: Noto Sans, Arial, sans-serif;
+	font-size: 22px;
+	font-weight: 400;
+	line-height: 26px;
+	margin-bottom: 8px;
+	margin-top: 1.4em;
+}
+
+.md p {
+	padding: 0.25em 0px;
+}
+
+.md hr {
+	border-color: rgba(215, 218, 220, 0.2) currentcolor currentcolor;
+	border-style: solid none none;
+	border-width: 1px 0px 0px;
+	border-image: none 100% / 1 / 0 stretch;
+	height: 1px;
+	margin: 8px 0px;
+}
+
+.md a {
+	color: rgb(79, 188, 255);
+}
