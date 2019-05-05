@@ -40,7 +40,7 @@ window.addEventListener("scroll", function () {
 searchbar.addEventListener('keyup', (e) => {
 
 	ribbonIso.arrange({
-		filter(num, elm) {
+		filter(elm) {
 			const request = searchbar.value
 
 			if (request === '') {
