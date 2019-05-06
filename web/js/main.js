@@ -1,15 +1,15 @@
-var $ribbon = $(".reddit-ribbon");
-var $searchbar = $("input");
+const $ribbon = $(".reddit-ribbon");
+const $searchbar = $("input");
 
-let flex = new FlexSearch();
+const flex = new FlexSearch();
 
-let postWidth = $(".reddit-post").width();
 let lastpost = "";
 
 var reddit = { 
 	subreddit: "",
 	sortmethod: "hot",
 	time: "",
+	limit: 75,
 };
 
 document.addEventListener("lazyloaded", function(e) {
@@ -52,7 +52,7 @@ function loadSubreddit(subreddit) {
 		}
 	});
 
-	loadPosts(subreddit, "hot")
+	loadPosts(subreddit, "hot", "", reddit.limit)
 
 	reddit.subreddit = subreddit;
 
@@ -62,7 +62,7 @@ function loadSubreddit(subreddit) {
 			// TODO: Searchbar shouldn't work this way
 			if (!loading && $searchbar.val() == "") {
 				loading = true;
-				loadPosts(subreddit, reddit.sortmethod, lastpost)
+				loadPosts(subreddit, reddit.sortmethod, lastpost, reddit.limit)
 					.then(() => loading = false);
 			}
 		}
@@ -81,8 +81,8 @@ function loadPosts(subreddit, sort = "hot", after = "", limit = "") {
 	let url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`;
 
 	return $.getJSON(url)
-		  .then(json => json.data.children)
-		  .then(posts => addPosts(posts));
+		.then(json => json.data.children)
+		.then(posts => addPosts(posts));
 }
 
 function addPosts(posts) {
@@ -98,6 +98,13 @@ function addPosts(posts) {
 	$ribbon.children().each(function(i, post) { flex.add(i, $(post).text()) });
 
 	lastpost = posts[posts.length - 1].data.name;
+}
+
+function createImg(url) {
+	const img = document.createElement("img");
+	img.className = "lazyload";
+	img.setAttribute("data-src", url);
+	return img;
 }
 
 function createPost(post) {
@@ -118,14 +125,10 @@ function createPost(post) {
 	// TODO: Simplify
 	switch(post.post_hint) {
 		case "image":
-			let img = document.createElement("img");
-			let previewURL = post.preview.images[0].source.url.replace(/&amp;/g, "&");
+			// let previewURL = post.preview.images[0].source.url.replace(/&amp;/g, "&");
 			// Killing quality, but saving a bunch of bandwidth.
-			// Probably should do speed test before loading subreddit.
-			// post.preview.images[0].resolutions[2].url.replace(/&amp;/g, "&");
-			img.className = "lazyload"
-			img.setAttribute("data-src", previewURL);
-			div.appendChild(img);
+			const previewURL = post.preview.images[0].resolutions[2].url.replace(/&amp;/g, "&");
+			div.appendChild(createImg(previewURL));
 			break;
 		case "rich:video":
 			div.innerHTML += decodeHTML(post.media.oembed.html);
@@ -163,21 +166,89 @@ function decodeHTML(html) {
 	return textarea.value;
 }
 
-// TODO: Imgur sizes still suck, fix me pls
 function imgur(url) {
-	let frame = document.createElement("iframe");
-	frame.scrolling = "no";
-	frame.frameBorder = 0;
-	frame.src = url + "/embed?pub=true";
-	frame.className = "imgur";
+	const clientID = "1db5a663e63400b";
+	const requestURL = url.replace("imgur.com", "api.imgur.com/3").replace("/a/", "/album/");
+	const options = {
+		headers: {
+			Authorization: `Client-ID ${clientID}`
+		}
+	};
 
-	return frame;
+	const elem = document.createElement("div");
+
+	const promise = fetch(requestURL, options)
+		.then(resp => resp.json())
+		.then(json => {
+			json = json.data;
+
+			if (json.images.length == 1) {
+				const img = createImg(json.images[0].link);
+				img.style.width = "100%";
+				elem.appendChild(img);
+				return;
+			};
+
+			const album = createAlbum();
+
+			json.images.forEach(image => {
+				album.addImage(image.link);
+			});
+
+			elem.appendChild(album);
+		});
+
+	return elem;
+}
+
+function createAlbum() {
+	const album = document.createElement("div");
+	const images = document.createElement("div");
+	const left = document.createElement("div");
+	const right = document.createElement("div");
+
+	album.className = "album";
+	images.className = "album-images";
+	left.className = "album-control album-left";
+	right.className = "album-control album-right";
+
+	album.addImage = function(url) {
+		const img = createImg(url);
+		images.appendChild(img);
+	}
+
+	let i = 0;
+
+	left.onclick = function() {
+		if (i > 0) {
+			images.style.right = images.children[--i].offsetLeft + "px";
+			right.style.display = "block";
+			if (i == 0) {
+				left.style.display = "none";
+			}
+		}
+	}
+
+	right.onclick = function() {
+		if (i + 1 < images.children.length) {
+			images.style.right = images.children[++i].offsetLeft + "px";
+			left.style.display = "block";
+			if (i == images.children.length - 1) {
+				right.style.display = "none";
+			}
+		}
+	}
+
+	album.appendChild(images);
+	album.appendChild(left);
+	album.appendChild(right);
+
+	return album;
 }
 
 function deviantart(url) {
 	let backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url=";
-	let img = document.createElement("img");
-	img.className = "lazyload";
+	let img = createImg();
 
 	$.getJSON(backendURL + url, json => {
 		img.setAttribute("data-src", json.url);
