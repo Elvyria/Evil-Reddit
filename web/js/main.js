@@ -28,8 +28,8 @@ window.addEventListener("scroll", function () {
 		if (!isLoading && searchbar.value == "") {
 			isLoading = true;
 
-			loadReddit(reddit.subreddit, reddit.sortMethod, lastPostId)
-				.done(() => isLoading = false);
+			requestSubreddit(reddit.subreddit, reddit.sortMethod, lastPostId)
+				.then(() => isLoading = false);
 		}
 	}
 })
@@ -148,11 +148,11 @@ function createPost(post) {
 			// TODO: Extract to prevent switch ladders.
 			switch (post.domain) {
 				case "imgur.com":
-					div.appendChild(getHtmlImg(imgur(post.url)))
+					div.appendChild(imgur(post.url));
 					break
 
 				case "deviantart.com":
-					div.appendChild(getHtmlImg(deviantart(post.url)))
+					div.appendChild(deviantart(post.url));
 					break
 			}
 			break
@@ -180,8 +180,12 @@ function decodeHTML(html) {
 
 async function deviantart(url) {
 	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url=";
+	const img = createImg();
 
-	return (await scriptRequestPromise(backendURL + url)).url;
+	scriptRequestPromise(backendURL + url)
+		.then(json => img.setAttribute("data-src", json.url));
+
+	return img;
 }
 
 function imgur(url) {
