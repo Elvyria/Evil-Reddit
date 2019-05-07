@@ -19,17 +19,7 @@ body {
 
 .reddit-ribbon {
 	margin: 70px auto 0 auto;
-	/*display: flex;*/
-	/*flex-direction: column;*/
-	/*width: 648px;*/
 }
-
-/*.pinterested {*/
-	/*flex-wrap: wrap;*/
-	/*align-items: flex-start;*/
-	/*flex-direction: row !important;*/
-	/*width: 100% !important;*/
-/*}*/
 
 .sizer {
 	width: 15vw;
@@ -75,8 +65,44 @@ body {
 	margin: 8px auto 0 auto;
 }
 
-.reddit-post > .imgur {
-	height: 512px;
+.album {
+	display: flex;
+	overflow: hidden;
+	position: relative;
+}
+
+.album-images {
+	display: flex;
+	position: relative;
+	right: 0;
+	transition: right 0.4s;
+}
+
+.album-images > img {
+	width: 310px;
+}
+
+.album-control {
+	position: absolute;
+	width: 10px;
+	height: 10px;
+	top: 50%;
+	padding: 10px;
+	margin-top: -30px;
+	border: solid white;
+	border-width: 0 0 2px 2px;
+	border-radius: 2px;
+}
+
+.album-right {
+	right: 15px;
+	transform: rotate(225deg);
+}
+
+.album-left {
+	left: 15px;
+	display: none;
+	transform: rotate(45deg);
 }
 
 .md {

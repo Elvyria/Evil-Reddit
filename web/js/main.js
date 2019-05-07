@@ -1,38 +1,35 @@
-const ribbon = document.querySelector(".reddit-ribbon")
-const searchbar = document.querySelector("input")
-const flex = new FlexSearch()
+const ribbon = document.querySelector(".reddit-ribbon");
+const searchbar = document.querySelector("input");
+const flex = new FlexSearch();
 // const postWidth = $(".reddit-post").width()
 const reddit = {
 	subreddit: "",
 	sortMethod: "hot",
 	time: "",
-}
+};
 
-let ribbonIso = null
-let lastPostId = ""
-let isLoading = false
-let enabledAutoload = false
+let ribbonIso = null;
+let lastPostId = "";
 
+let enabledAutoload = false;
 
-
-loadSubreddit("/r/awwnime")
-
-
+loadSubreddit("/r/awwnime");
 
 document.addEventListener("lazyloaded", () => {
 	ribbonIso.layout()
-})
+});
 
+let isLoading = false;
 window.addEventListener("scroll", function () {
-	if (!enabledAutoload) { return }
+	if (!enabledAutoload) { return };
 	if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
 
 		// TODO: Searchbar shouldn't work this way
 		if (!isLoading && searchbar.value == "") {
-			isLoading = true
+			isLoading = true;
 
 			loadReddit(reddit.subreddit, reddit.sortMethod, lastPostId)
-				.then(() => isLoading = false)
+				.done(() => isLoading = false);
 		}
 	}
 })
@@ -41,24 +38,22 @@ searchbar.addEventListener('keyup', (e) => {
 
 	ribbonIso.arrange({
 		filter(elm) {
-			const request = searchbar.value
+			const request = searchbar.value;
 
 			if (request === '') {
-				return true
+				return true;
 			}
 
-			const result = flex.search(request)
+			const result = flex.search(request);
 
-			return result.includes([...elm.parentNode.children].indexOf(elm))
+			return result.includes([...elm.parentNode.children].indexOf(elm));
 		}
 	})
 })
 
-
-
 function loadSubreddit(subreddit) {
 
-	clearRibbon()
+	clearRibbon();
 
 	ribbonIso = new Isotope(ribbon, {
 		percentPosition: true,
@@ -68,44 +63,35 @@ function loadSubreddit(subreddit) {
 			fitWidth: true,
 			gutter: 10
 		}
-	})
+	});
 
+	requestSubreddit(subreddit, reddit.sortMethod);
 
-	loadReddit(subreddit, reddit.sortMethod)
-
-	reddit.subreddit = subreddit
-	enabledAutoload = true
+	reddit.subreddit = subreddit;
+	enabledAutoload = true;
 }
-
-
 
 function clearRibbon() {
 
 	while (ribbon.children[0]) {
-		ribbon.removeChild(ribbon.firstChild)
+		ribbon.removeChild(ribbon.firstChild);
 	}
 
-	flex.clear()
+	flex.clear();
 
 	if (Isotope.data(ribbon)) {
-		ribbonIso.destroy()
+		ribbonIso.destroy();
 	}
 }
 
-
-
-function loadReddit(subreddit, sort = "hot", after = "", limit = "") {
+function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
 	const url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`;
-
-	console.log(url)
 
 	return scriptRequestPromise(url)
 		  .then(json => json.data.children)
 		  .then(posts => addPosts(posts));
 }
-
-
-
+    
 async function addPosts(posts) {
 	for (i of posts) {
 		div = await createPost(i.data)
@@ -115,25 +101,24 @@ async function addPosts(posts) {
 	ribbonIso.reloadItems()
 	ribbonIso.arrange()
 
-	console.log(flex)
-
 	Array.from(ribbon.children).forEach( (post, i) => {
-		console.log(i)
-		console.log(post.innerText)
-
 		flex.add(i, post.innerText)
 	});
-
 
 	lastPostId = posts[posts.length - 1].data.name
 }
 
+function createImg(url) {
+	const img = document.createElement("img");
+	img.className = "lazyload";
+	img.setAttribute("data-src", url);
+	return img;
+}
 
-
-async function createPost(post) {
-	const div = document.createElement("div")
-	div.id = post.name
-	div.className = "reddit-post"
+function createPost(post) {
+	const div = document.createElement("div");
+	div.id = post.name;
+	div.className = "reddit-post";
 
 	const h2 = document.createElement("h2")
 	// Such posts require innerHTML instead of textContent
@@ -149,16 +134,11 @@ async function createPost(post) {
 	switch (post.post_hint) {
 
 		case "image":
-			const img = document.createElement("img")
-			const previewURL = post.preview.images[0].source.url.replace(/&amp;/g, "&")
+			// let previewURL = post.preview.images[0].source.url.replace(/&amp;/g, "&");
 			// Killing quality, but saving a bunch of bandwidth.
-			// Probably should do speed test before loading subreddit.
-			// post.preview.images[0].resolutions[2].url.replace(/&amp/g, "&")
-			img.className = "lazyload"
-			img.setAttribute("data-src", previewURL)
-			div.appendChild(img)
-			break
-
+			const previewURL = post.preview.images[0].resolutions[2].url.replace(/&amp;/g, "&");
+			div.appendChild(createImg(previewURL));
+			break;
 		case "rich:video":
 			div.innerHTML += decodeHTML(post.media.oembed.html)
 			div.querySelector("iframe").className = "lazyload"
@@ -187,91 +167,121 @@ async function createPost(post) {
 	return div
 }
 
-
-
 function searchSubreddit(query, subreddit = "", sort = "", after = "") {
 	const url = `https://reddit.com${subreddit}/search/.json?q=${query}&restrict_sr=1&jsonp=?`
 	return scriptRequestPromise(url).then(json => json.data.children)
 }
 
-
-
 function decodeHTML(html) {
-	const textarea = document.createElement('textarea')
-	textarea.innerHTML = html
-	return textarea.value
+	const textarea = document.createElement('textarea');
+	textarea.innerHTML = html;
+	return textarea.value;
 }
-
-
-
-async function imgur(url) {
-
-	const clientId = '1db5a663e63400b'
-
-
-	return init()
-
-	async function init() {
-		const parsedUrl = url.replace('https://imgur.com', '').replace('/a/', '/album/')
-
-
-		const result = fetch(`https://api.imgur.com/3/${parsedUrl}`, {
-			headers: {
-				Authorization: `Client-ID ${clientId}`
-			}
-		})
-
-
-		return (await (await result).json()).data
-	}
-}
-
-
 
 async function deviantart(url) {
-	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url="
+	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url=";
 
-	return (await scriptRequestPromise(backendURL + url)).url
+	return (await scriptRequestPromise(backendURL + url)).url;
 }
 
+function imgur(url) {
+	const clientID = "1db5a663e63400b";
+	const requestURL = url.replace("imgur.com", "api.imgur.com/3").replace("/a/", "/album/");
+	const options = {
+		headers: {
+			Authorization: `Client-ID ${clientID}`
+		}
+	};
 
+	const elem = document.createElement("div");
 
-function getHtmlImg(promise) {
+	const promise = fetch(requestURL, options)
+		.then(resp => resp.json())
+		.then(json => {
+			json = json.data;
 
-	const img = document.createElement("img")
-	img.className = "lazyLoad"
+			if (json.images.length == 1) {
+				const img = createImg(json.images[0].link);
+				img.style.width = "100%";
+				elem.appendChild(img);
+				return;
+			};
 
-	promise.then( (data) => {
-		img.setAttribute("data-src", data.url)
-		img.setAttribute("data-loaded", false)
-	})
+			const album = createAlbum();
 
-	return img
+			json.images.forEach(image => {
+				album.addImage(image.link);
+			});
+
+			elem.appendChild(album);
+		});
+
+	return elem;
 }
 
+function createAlbum() {
+	const album = document.createElement("div");
+	const images = document.createElement("div");
+	const left = document.createElement("div");
+	const right = document.createElement("div");
 
+	album.className = "album";
+	images.className = "album-images";
+	left.className = "album-control album-left";
+	right.className = "album-control album-right";
+
+	album.addImage = function(url) {
+		const img = createImg(url);
+		images.appendChild(img);
+	}
+
+	let i = 0;
+
+	left.onclick = function() {
+		if (i > 0) {
+			images.style.right = images.children[--i].offsetLeft + "px";
+			right.style.display = "block";
+			if (i == 0) {
+				left.style.display = "none";
+			}
+		}
+	}
+
+	right.onclick = function() {
+		if (i + 1 < images.children.length) {
+			images.style.right = images.children[++i].offsetLeft + "px";
+			left.style.display = "block";
+			if (i == images.children.length - 1) {
+				right.style.display = "none";
+			}
+		}
+	}
+
+	album.appendChild(images);
+	album.appendChild(left);
+	album.appendChild(right);
+
+	return album;
+}
 
 function scriptRequestPromise(jsonpUrl) {
-	let resolves = null
-	let rejects = null
+	let resolves = null;
+	let rejects = null;
 
 	const returnValue = new Promise((resolve, reject) => {
-		resolves = resolve
-		rejects = reject
-	})
+		resolves = resolve;
+		rejects = reject;
+	});
 
-	scriptRequest(jsonpUrl, resolves, rejects)
+	scriptRequest(jsonpUrl, resolves, rejects);
 
-	return returnValue
+	return returnValue;
 }
-
-
 
 function scriptRequest(path, success, error)
 {
     var xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function()
-    {
+    xhr.onreadystatechange = function() {
         if (xhr.readyState === XMLHttpRequest.DONE) {
             if (xhr.status === 200) {
                 if (success)
