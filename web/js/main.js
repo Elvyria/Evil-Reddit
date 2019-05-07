@@ -1,35 +1,38 @@
-const ribbon = document.querySelector(".reddit-ribbon");
-const searchbar = document.querySelector("input");
-const flex = new FlexSearch();
+const ribbon = document.querySelector(".reddit-ribbon")
+const searchbar = document.querySelector("input")
+const flex = new FlexSearch()
 // const postWidth = $(".reddit-post").width()
 const reddit = {
 	subreddit: "",
 	sortMethod: "hot",
 	time: "",
-};
+}
 
-let ribbonIso = null;
-let lastPostId = "";
+let ribbonIso = null
+let lastPostId = ""
+let enabledAutoload = false
+let isLoading = false
 
-let enabledAutoload = false;
 
-loadSubreddit("/r/awwnime");
+
+loadSubreddit("/r/awwnime")
+
+
 
 document.addEventListener("lazyloaded", () => {
 	ribbonIso.layout()
-});
+})
 
-let isLoading = false;
 window.addEventListener("scroll", function () {
-	if (!enabledAutoload) { return };
+	if (!enabledAutoload) { return }
 	if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
 
 		// TODO: Searchbar shouldn't work this way
 		if (!isLoading && searchbar.value == "") {
-			isLoading = true;
+			isLoading = true
 
 			requestSubreddit(reddit.subreddit, reddit.sortMethod, lastPostId)
-				.then(() => isLoading = false);
+				.then(() => isLoading = false)
 		}
 	}
 })
@@ -38,22 +41,23 @@ searchbar.addEventListener('keyup', (e) => {
 
 	ribbonIso.arrange({
 		filter(elm) {
-			const request = searchbar.value;
+			const request = searchbar.value
+			const result = flex.search(request)
 
 			if (request === '') {
-				return true;
+				return true
 			}
 
-			const result = flex.search(request);
-
-			return result.includes([...elm.parentNode.children].indexOf(elm));
+			return result.includes([...elm.parentNode.children].indexOf(elm))
 		}
 	})
 })
 
+
+
 function loadSubreddit(subreddit) {
 
-	clearRibbon();
+	clearRibbon()
 
 	ribbonIso = new Isotope(ribbon, {
 		percentPosition: true,
@@ -63,35 +67,27 @@ function loadSubreddit(subreddit) {
 			fitWidth: true,
 			gutter: 10
 		}
-	});
+	})
 
-	requestSubreddit(subreddit, reddit.sortMethod);
+	requestSubreddit(subreddit, reddit.sortMethod)
 
-	reddit.subreddit = subreddit;
-	enabledAutoload = true;
+	reddit.subreddit = subreddit
+	enabledAutoload = true
 }
 
 function clearRibbon() {
 
 	while (ribbon.children[0]) {
-		ribbon.removeChild(ribbon.firstChild);
+		ribbon.removeChild(ribbon.firstChild)
 	}
 
-	flex.clear();
+	flex.clear()
 
 	if (Isotope.data(ribbon)) {
-		ribbonIso.destroy();
+		ribbonIso.destroy()
 	}
 }
 
-function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
-	const url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`;
-
-	return scriptRequestPromise(url)
-		  .then(json => json.data.children)
-		  .then(posts => addPosts(posts));
-}
-    
 async function addPosts(posts) {
 	for (i of posts) {
 		div = await createPost(i.data)
@@ -101,24 +97,24 @@ async function addPosts(posts) {
 	ribbonIso.reloadItems()
 	ribbonIso.arrange()
 
-	Array.from(ribbon.children).forEach( (post, i) => {
+	Array.from(ribbon.children).forEach((post, i) => {
 		flex.add(i, post.innerText)
-	});
+	})
 
 	lastPostId = posts[posts.length - 1].data.name
 }
 
 function createImg(url) {
-	const img = document.createElement("img");
-	img.className = "lazyload";
-	img.setAttribute("data-src", url);
-	return img;
+	const img = document.createElement("img")
+	img.className = "lazyload"
+	img.setAttribute("data-src", url)
+	return img
 }
 
 function createPost(post) {
-	const div = document.createElement("div");
-	div.id = post.name;
-	div.className = "reddit-post";
+	const div = document.createElement("div")
+	div.id = post.name
+	div.className = "reddit-post"
 
 	const h2 = document.createElement("h2")
 	// Such posts require innerHTML instead of textContent
@@ -134,11 +130,11 @@ function createPost(post) {
 	switch (post.post_hint) {
 
 		case "image":
-			// let previewURL = post.preview.images[0].source.url.replace(/&amp;/g, "&");
+			// let previewURL = post.preview.images[0].source.url.replace(/&amp;/g, "&")
 			// Killing quality, but saving a bunch of bandwidth.
-			const previewURL = post.preview.images[0].resolutions[2].url.replace(/&amp;/g, "&");
-			div.appendChild(createImg(previewURL));
-			break;
+			const previewURL = post.preview.images[0].resolutions[2].url.replace(/&amp;/g, "&")
+			div.appendChild(createImg(previewURL))
+			break
 		case "rich:video":
 			div.innerHTML += decodeHTML(post.media.oembed.html)
 			div.querySelector("iframe").className = "lazyload"
@@ -148,11 +144,11 @@ function createPost(post) {
 			// TODO: Extract to prevent switch ladders.
 			switch (post.domain) {
 				case "imgur.com":
-					div.appendChild(imgur(post.url));
+					div.appendChild(requestImgur(post.url))
 					break
 
 				case "deviantart.com":
-					div.appendChild(deviantart(post.url));
+					div.appendChild(requestDeviantart(post.url))
 					break
 			}
 			break
@@ -173,129 +169,136 @@ function searchSubreddit(query, subreddit = "", sort = "", after = "") {
 }
 
 function decodeHTML(html) {
-	const textarea = document.createElement('textarea');
-	textarea.innerHTML = html;
-	return textarea.value;
+	const textarea = document.createElement('textarea')
+	textarea.innerHTML = html
+	return textarea.value
 }
 
-async function deviantart(url) {
-	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url=";
-	const img = createImg();
+function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
+	const url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`
+
+	return scriptRequestPromise(url)
+		.then(json => json.data.children)
+		.then(posts => addPosts(posts))
+}
+
+async function requestDeviantart(url) {
+	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url="
+	const img = createImg()
 
 	scriptRequestPromise(backendURL + url)
-		.then(json => img.setAttribute("data-src", json.url));
+		.then(json => img.setAttribute("data-src", json.url))
 
-	return img;
+	return img
 }
 
-function imgur(url) {
-	const clientID = "1db5a663e63400b";
-	const requestURL = url.replace("imgur.com", "api.imgur.com/3").replace("/a/", "/album/");
+function requestImgur(url) {
+	const clientID = "1db5a663e63400b"
+	const requestURL = url.replace("imgur.com", "api.imgur.com/3").replace("/a/", "/album/")
 	const options = {
 		headers: {
 			Authorization: `Client-ID ${clientID}`
 		}
-	};
+	}
 
-	const elem = document.createElement("div");
+	const elem = document.createElement("div")
 
 	const promise = fetch(requestURL, options)
 		.then(resp => resp.json())
 		.then(json => {
-			json = json.data;
+			json = json.data
 
 			if (json.images.length == 1) {
-				const img = createImg(json.images[0].link);
-				img.style.width = "100%";
-				elem.appendChild(img);
-				return;
-			};
+				const img = createImg(json.images[0].link)
+				img.style.width = "100%"
+				elem.appendChild(img)
+				return
+			}
 
-			const album = createAlbum();
+			const album = createAlbum()
 
 			json.images.forEach(image => {
-				album.addImage(image.link);
-			});
+				album.addImage(image.link)
+			})
 
-			elem.appendChild(album);
-		});
+			elem.appendChild(album)
+		})
 
-	return elem;
+	return elem
 }
 
 function createAlbum() {
-	const album = document.createElement("div");
-	const images = document.createElement("div");
-	const left = document.createElement("div");
-	const right = document.createElement("div");
+	const album = document.createElement("div")
+	const images = document.createElement("div")
+	const left = document.createElement("div")
+	const right = document.createElement("div")
 
-	album.className = "album";
-	images.className = "album-images";
-	left.className = "album-control album-left";
-	right.className = "album-control album-right";
+	album.className = "album"
+	images.className = "album-images"
+	left.className = "album-control album-left"
+	right.className = "album-control album-right"
 
-	album.addImage = function(url) {
-		const img = createImg(url);
-		images.appendChild(img);
+	album.addImage = function (url) {
+		const img = createImg(url)
+		images.appendChild(img)
 	}
 
-	let i = 0;
+	let i = 0
 
-	left.onclick = function() {
+	left.onclick = function () {
 		if (i > 0) {
-			images.style.right = images.children[--i].offsetLeft + "px";
-			right.style.display = "block";
+			images.style.right = images.children[--i].offsetLeft + "px"
+			right.style.display = "block"
 			if (i == 0) {
-				left.style.display = "none";
+				left.style.display = "none"
 			}
 		}
 	}
 
-	right.onclick = function() {
+	right.onclick = function () {
 		if (i + 1 < images.children.length) {
-			images.style.right = images.children[++i].offsetLeft + "px";
-			left.style.display = "block";
+			images.style.right = images.children[++i].offsetLeft + "px"
+			left.style.display = "block"
 			if (i == images.children.length - 1) {
-				right.style.display = "none";
+				right.style.display = "none"
 			}
 		}
 	}
 
-	album.appendChild(images);
-	album.appendChild(left);
-	album.appendChild(right);
+	album.appendChild(images)
+	album.appendChild(left)
+	album.appendChild(right)
 
-	return album;
+	return album
 }
 
 function scriptRequestPromise(jsonpUrl) {
-	let resolves = null;
-	let rejects = null;
+	let resolves = null
+	let rejects = null
 
 	const returnValue = new Promise((resolve, reject) => {
-		resolves = resolve;
-		rejects = reject;
-	});
+		resolves = resolve
+		rejects = reject
+	})
 
-	scriptRequest(jsonpUrl, resolves, rejects);
+	scriptRequest(jsonpUrl, resolves, rejects)
 
-	return returnValue;
+	return returnValue
 }
 
-function scriptRequest(path, success, error)
-{
-    var xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === XMLHttpRequest.DONE) {
-            if (xhr.status === 200) {
-                if (success)
-                    success(JSON.parse(xhr.responseText));
-            } else {
-                if (error)
-                    error(xhr);
-            }
-        }
-    };
-    xhr.open("GET", path, true);
-    xhr.send();
+function scriptRequest(path, success, error) {
+	var xhr = new XMLHttpRequest()
+	xhr.onreadystatechange = function () {
+		if (xhr.readyState === XMLHttpRequest.DONE) {
+			if (xhr.status === 200) {
+				if (success)
+					success(JSON.parse(xhr.responseText))
+			} else {
+				if (error)
+					error(xhr)
+			}
+		}
+	}
+	xhr.open("GET", path, true)
+	xhr.send()
 }
