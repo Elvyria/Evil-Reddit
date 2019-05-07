@@ -1,103 +1,111 @@
-const $ribbon = $(".reddit-ribbon");
-const $searchbar = $("input");
-
+const ribbon = document.querySelector(".reddit-ribbon");
+const searchbar = document.querySelector("input");
 const flex = new FlexSearch();
-
-let lastpost = "";
-
-var reddit = { 
+// const postWidth = $(".reddit-post").width()
+const reddit = {
 	subreddit: "",
-	sortmethod: "hot",
+	sortMethod: "hot",
 	time: "",
-	limit: 75,
 };
 
-document.addEventListener("lazyloaded", function(e) {
-	$ribbon.isotope("layout");
-});
+let ribbonIso = null;
+let lastPostId = "";
 
-$searchbar.keyup((e) => {
-	// Global Subreddit search through API
-	if (e.keyCode == 13) {
-		request = searchSubreddit($searchbar.val(), reddit.subreddit, reddit.sortmethod);
-		request.then(posts => {
-		});
-	}
-
-	$ribbon.isotope();
-	$ribbon.isotope('layout');
-});
+let enabledAutoload = false;
 
 loadSubreddit("/r/awwnime");
 
+document.addEventListener("lazyloaded", () => {
+	ribbonIso.layout()
+});
+
+let isLoading = false;
+window.addEventListener("scroll", function () {
+	if (!enabledAutoload) { return };
+	if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+
+		// TODO: Searchbar shouldn't work this way
+		if (!isLoading && searchbar.value == "") {
+			isLoading = true;
+
+			requestSubreddit(reddit.subreddit, reddit.sortMethod, lastPostId)
+				.then(() => isLoading = false);
+		}
+	}
+})
+
+searchbar.addEventListener('keyup', (e) => {
+
+	ribbonIso.arrange({
+		filter(elm) {
+			const request = searchbar.value;
+
+			if (request === '') {
+				return true;
+			}
+
+			const result = flex.search(request);
+
+			return result.includes([...elm.parentNode.children].indexOf(elm));
+		}
+	})
+})
+
 function loadSubreddit(subreddit) {
+
 	clearRibbon();
 
-	$ribbon.isotope({
+	ribbonIso = new Isotope(ribbon, {
 		percentPosition: true,
 		itemSelector: '.reddit-post',
 		layoutMode: 'masonry',
 		masonry: {
 			fitWidth: true,
 			gutter: 10
-		},
-		filter: function() {
-			let request = $searchbar.val();
-			if (request == "") {
-				return true;
-			}
-			let result = flex.search(request);
-
-			return result.includes($(this).index());
 		}
 	});
 
-	loadPosts(subreddit, "hot", "", reddit.limit)
+	requestSubreddit(subreddit, reddit.sortMethod);
 
 	reddit.subreddit = subreddit;
-
-	let loading = false;
-	window.addEventListener("scroll", function() {
-		if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
-			// TODO: Searchbar shouldn't work this way
-			if (!loading && $searchbar.val() == "") {
-				loading = true;
-				loadPosts(subreddit, reddit.sortmethod, lastpost, reddit.limit)
-					.then(() => loading = false);
-			}
-		}
-	});
+	enabledAutoload = true;
 }
 
 function clearRibbon() {
-	$(".reddit-ribbon").empty();
+
+	while (ribbon.children[0]) {
+		ribbon.removeChild(ribbon.firstChild);
+	}
+
 	flex.clear();
-	if (Isotope.data($ribbon[0])) {
-		$ribbon.isotope('destroy');
+
+	if (Isotope.data(ribbon)) {
+		ribbonIso.destroy();
 	}
 }
 
-function loadPosts(subreddit, sort = "hot", after = "", limit = "") {
-	let url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`;
+function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
+	const url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`;
 
-	return $.getJSON(url)
-		.then(json => json.data.children)
-		.then(posts => addPosts(posts));
+	return scriptRequestPromise(url)
+		  .then(json => json.data.children)
+		  .then(posts => addPosts(posts));
 }
+    
+async function addPosts(posts) {
+	for (i of posts) {
+		div = await createPost(i.data)
+		ribbon.appendChild(div)
+	}
 
-function addPosts(posts) {
-	posts.forEach(post => {
-		div = createPost(post.data);
-		$ribbon.append(div);
+	ribbonIso.reloadItems()
+	ribbonIso.arrange()
+
+	Array.from(ribbon.children).forEach( (post, i) => {
+		flex.add(i, post.innerText)
 	});
 
-	$ribbon.isotope('reloadItems');
-	$ribbon.isotope();
-
-	// Add text in posts to flex for indexing
-	$ribbon.children().each(function(i, post) { flex.add(i, $(post).text()) });
-
-	lastpost = posts[posts.length - 1].data.name;
+	lastPostId = posts[posts.length - 1].data.name
 }
 
 function createImg(url) {
@@ -108,22 +116,23 @@ function createImg(url) {
 }
 
 function createPost(post) {
-	let div = document.createElement("div");
+	const div = document.createElement("div");
 	div.id = post.name;
 	div.className = "reddit-post";
 
-	let h2 = document.createElement("h2");
+	const h2 = document.createElement("h2")
 	// Such posts require innerHTML instead of textContent
 	// (reddit.com/r/awwnime/comments/bhew2y/the_rainy_season_hero_froppy_3_boku_no_hero/)
-	h2.innerHTML = post.title;
-	div.appendChild(h2);
+	h2.innerHTML = post.title
+	div.appendChild(h2)
 
-	let a = document.createElement("a");
-	a.href = post.url;
-	a.textContent = post.url.replace("https://", "").replace("www.", "");
+	const a = document.createElement("a")
+	a.href = post.url
+	a.textContent = post.url.replace("https://", "").replace("www.", "")
 
 	// TODO: Simplify
-	switch(post.post_hint) {
+	switch (post.post_hint) {
+
 		case "image":
 			// let previewURL = post.preview.images[0].source.url.replace(/&amp;/g, "&");
 			// Killing quality, but saving a bunch of bandwidth.
@@ -131,39 +140,52 @@ function createPost(post) {
 			div.appendChild(createImg(previewURL));
 			break;
 		case "rich:video":
-			div.innerHTML += decodeHTML(post.media.oembed.html);
-			div.querySelector("iframe").className = "lazyload";
-			break;
+			div.innerHTML += decodeHTML(post.media.oembed.html)
+			div.querySelector("iframe").className = "lazyload"
+			break
+
 		case "link":
 			// TODO: Extract to prevent switch ladders.
 			switch (post.domain) {
 				case "imgur.com":
 					div.appendChild(imgur(post.url));
-					break;
+					break
+
 				case "deviantart.com":
 					div.appendChild(deviantart(post.url));
-					break;
+					break
 			}
-			break;
+			break
+
 		default:
-			let textNode = document.createElement("div");
-			div.innerHTML += decodeHTML(post.selftext_html);
+			const textNode = document.createElement("div")
+			div.innerHTML += decodeHTML(post.selftext_html)
 	}
 
-	div.appendChild(a);
+	div.appendChild(a)
 
 	return div
 }
 
 function searchSubreddit(query, subreddit = "", sort = "", after = "") {
-	let url = `https://reddit.com${subreddit}/search/.json?q=${query}&restrict_sr=1&jsonp=?`
-	return $.getJSON(url).then(json => json.data.children);
+	const url = `https://reddit.com${subreddit}/search/.json?q=${query}&restrict_sr=1&jsonp=?`
+	return scriptRequestPromise(url).then(json => json.data.children)
 }
 
 function decodeHTML(html) {
-	let textarea = document.createElement('textarea');
+	const textarea = document.createElement('textarea');
 	textarea.innerHTML = html;
 	return textarea.value;
+}
+
+async function deviantart(url) {
+	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url=";
+	const img = createImg();
+
+	scriptRequestPromise(backendURL + url)
+		.then(json => img.setAttribute("data-src", json.url));
+
+	return img;
 }
 
 function imgur(url) {
@@ -246,14 +268,34 @@ function createAlbum() {
 	return album;
 }
 
-function deviantart(url) {
-	let backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url=";
-	let img = createImg();
+function scriptRequestPromise(jsonpUrl) {
+	let resolves = null;
+	let rejects = null;
 
-	$.getJSON(backendURL + url, json => {
-		img.setAttribute("data-src", json.url);
-		img.setAttribute("data-loaded", false);
+	const returnValue = new Promise((resolve, reject) => {
+		resolves = resolve;
+		rejects = reject;
 	});
 
-	return img;
+	scriptRequest(jsonpUrl, resolves, rejects);
+
+	return returnValue;
+}
+
+function scriptRequest(path, success, error)
+{
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                if (success)
+                    success(JSON.parse(xhr.responseText));
+            } else {
+                if (error)
+                    error(xhr);
+            }
+        }
+    };
+    xhr.open("GET", path, true);
+    xhr.send();
 }
