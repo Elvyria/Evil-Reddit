@@ -5,11 +5,12 @@ const flex = new FlexSearch()
 const reddit = {
 	subreddit: "",
 	sortMethod: "hot",
-	time: "",
+	lastPostId: '',
+	limit: 70,
+	time: ""
 }
 
 let ribbonIso = null
-let lastPostId = ""
 let enabledAutoload = false
 let isLoading = false
 
@@ -31,7 +32,7 @@ window.addEventListener("scroll", function () {
 		if (!isLoading && searchbar.value == "") {
 			isLoading = true
 
-			requestSubreddit(reddit.subreddit, reddit.sortMethod, lastPostId)
+			requestSubreddit(reddit.subreddit, reddit.sortMethod, reddit.lastPostId, reddit.limit)
 				.then(() => isLoading = false)
 		}
 	}
@@ -48,18 +49,27 @@ searchbar.addEventListener('keyup', (e) => {
 				return true
 			}
 
-			return result.includes([...elm.parentNode.children].indexOf(elm))
+			return result.includes([...ribbon.children].indexOf(elm))
 		}
 	})
 })
 
 
 
+function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
+	const url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`
+
+	return scriptRequestPromise(url)
+		.then(json => json.data.children)
+		.then(posts => addPosts(posts))
+}
+
 function loadSubreddit(subreddit) {
 
 	clearRibbon()
 
 	ribbonIso = new Isotope(ribbon, {
+		// transitionDuration: 0,
 		percentPosition: true,
 		itemSelector: '.reddit-post',
 		layoutMode: 'masonry',
@@ -101,7 +111,7 @@ async function addPosts(posts) {
 		flex.add(i, post.innerText)
 	})
 
-	lastPostId = posts[posts.length - 1].data.name
+	reddit.lastPostId = posts[posts.length - 1].data.name
 }
 
 function createImg(url) {
@@ -144,11 +154,11 @@ function createPost(post) {
 			// TODO: Extract to prevent switch ladders.
 			switch (post.domain) {
 				case "imgur.com":
-					div.appendChild(requestImgur(post.url))
+					div.appendChild(getImgur(post.url))
 					break
 
 				case "deviantart.com":
-					div.appendChild(requestDeviantart(post.url))
+					div.appendChild(getDeviantart(post.url))
 					break
 			}
 			break
@@ -174,15 +184,7 @@ function decodeHTML(html) {
 	return textarea.value
 }
 
-function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
-	const url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`
-
-	return scriptRequestPromise(url)
-		.then(json => json.data.children)
-		.then(posts => addPosts(posts))
-}
-
-async function requestDeviantart(url) {
+function getDeviantart(url) {
 	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url="
 	const img = createImg()
 
@@ -192,7 +194,7 @@ async function requestDeviantart(url) {
 	return img
 }
 
-function requestImgur(url) {
+function getImgur(url) {
 	const clientID = "1db5a663e63400b"
 	const requestURL = url.replace("imgur.com", "api.imgur.com/3").replace("/a/", "/album/")
 	const options = {
