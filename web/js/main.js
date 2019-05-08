@@ -1,7 +1,7 @@
 const ribbon = document.querySelector(".reddit-ribbon")
 const searchbar = document.querySelector("input")
 const flex = new FlexSearch()
-// const postWidth = $(".reddit-post").width()
+
 const reddit = {
 	subreddit: "",
 	sortMethod: "hot",
@@ -98,18 +98,28 @@ function clearRibbon() {
 	}
 }
 
-async function addPosts(posts) {
-	for (i of posts) {
-		div = await createPost(i.data)
+function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
+	const url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`;
+
+	return scriptRequestPromise(url)
+		  .then(json => json.data.children)
+		  .then(posts => addPosts(posts));
+}
+    
+function addPosts(posts) {
+	let i = ribbon.children.length
+
+	posts.forEach(post => {
+		const div = createPost(post.data)
 		ribbon.appendChild(div)
-	}
+	})
 
 	ribbonIso.reloadItems()
 	ribbonIso.arrange()
 
-	Array.from(ribbon.children).forEach((post, i) => {
-		flex.add(i, post.innerText)
-	})
+	for (; i < ribbon.children.length; i++) {
+		flex.add(i, ribbon.children[i].innerText)
+	}
 
 	reddit.lastPostId = posts[posts.length - 1].data.name
 }
