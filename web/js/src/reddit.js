@@ -1,3 +1,8 @@
+import "lazysizes";
+
+var Isotope = require("isotope-layout")
+var FlexSearch = require("flexsearch")
+
 const ribbon = document.querySelector(".reddit-ribbon")
 const searchbar = document.querySelector("input")
 const flex = new FlexSearch()
