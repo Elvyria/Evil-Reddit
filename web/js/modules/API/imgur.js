@@ -6,49 +6,53 @@ const clientID = "1db5a663e63400b"
 
 
 
-function createAlbum() {
-	const album = document.createElement("div")
-	const images = document.createElement("div")
-	const left = document.createElement("div")
-	const right = document.createElement("div")
+class Album {
+	div = document.createElement("div")
+	images = document.createElement("div")
+	left = document.createElement("div")
+	right = document.createElement("div")
 
-	album.className = "album"
-	images.className = "album-images"
-	left.className = "album-control album-left"
-	right.className = "album-control album-right"
+	counter = 0
 
-	album.addImage = function (url) {
+	constructor() {
+		this.div.className = "album"
+		this.images.className = "album-images"
+		this.left.className = "album-control album-left"
+		this.right.className = "album-control album-right"
+
+
+		this.div.appendChild(this.images)
+		this.div.appendChild(this.left)
+		this.div.appendChild(this.right)
+
+
+		this.left.onclick = () => {
+			if (this.counter > 0) {
+				this.images.style.right = this.images.children[--this.counter].offsetLeft + "px"
+				this.right.style.display = "block"
+
+				if (this.counter === 0) {
+					this.left.style.display = "none"
+				}
+			}
+		}
+
+		this.right.onclick = () => {
+			if (this.counter + 1 < this.images.children.length) {
+				this.images.style.right = this.images.children[++this.counter].offsetLeft + "px"
+				this.left.style.display = "block"
+				if (this.counter === this.images.children.length - 1) {
+					this.right.style.display = "none"
+				}
+			}
+		}
+	}
+
+
+	addImage(url) {
 		const img = createImg(url)
-		images.appendChild(img)
+		this.images.appendChild(img)
 	}
-
-	let i = 0
-
-	left.onclick = function () {
-		if (i > 0) {
-			images.style.right = images.children[--i].offsetLeft + "px"
-			right.style.display = "block"
-			if (i === 0) {
-				left.style.display = "none"
-			}
-		}
-	}
-
-	right.onclick = function () {
-		if (i + 1 < images.children.length) {
-			images.style.right = images.children[++i].offsetLeft + "px"
-			left.style.display = "block"
-			if (i === images.children.length - 1) {
-				right.style.display = "none"
-			}
-		}
-	}
-
-	album.appendChild(images)
-	album.appendChild(left)
-	album.appendChild(right)
-
-	return album
 }
 
 
@@ -78,13 +82,13 @@ function getImgur(url) {
 				return
 			}
 
-			const album = createAlbum()
+			const album = new Album()
 
 			data.images.forEach(image => {
 				album.addImage(image.link)
 			})
 
-			elem.appendChild(album)
+			elem.appendChild(album.div)
 		})
 
 	return elem
