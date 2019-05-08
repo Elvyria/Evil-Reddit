@@ -1,3 +1,37 @@
+import scriptRequestPromise from "./modules/XMLRequest.js"
+import createImg from './modules/createImg.js'
+import getImgur from './modules/API/imgur.js'
+import getDeviantart from './modules/API/deviantart.js'
+
+
+
+/*>Testing<*/
+const testing = document.createElement('div')
+const button1 = document.createElement('button')
+const button2 = document.createElement('button')
+const button3 = document.createElement('button')
+
+button1.innerText = '/r/dfo (videos, text, pictures)'
+button1.onclick = function() { loadSubreddit('/r/dfo') }
+
+button2.innerText = '/r/awwnime (pictures with mostly the same size)'
+button2.onclick = function() { loadSubreddit('/r/awwnime') }
+
+button3.innerText = '/r/unix (pictures with different sizes and sources)'
+button3.onclick = function() { loadSubreddit('/r/unixporn') }
+
+
+testing.appendChild(button1)
+testing.appendChild(button2)
+testing.appendChild(button3)
+
+document.body.firstElementChild.appendChild(testing)
+/*<Testing>*/
+
+
+
+/*__SCRIPT_START__*/
+
 const ribbon = document.querySelector(".reddit-ribbon")
 const searchbar = document.querySelector("input")
 const flex = new FlexSearch()
@@ -99,8 +133,8 @@ function clearRibbon() {
 }
 
 async function addPosts(posts) {
-	for (i of posts) {
-		div = await createPost(i.data)
+	for (let i of posts) {
+		const div = await createPost(i.data)
 		ribbon.appendChild(div)
 	}
 
@@ -114,12 +148,7 @@ async function addPosts(posts) {
 	reddit.lastPostId = posts[posts.length - 1].data.name
 }
 
-function createImg(url) {
-	const img = document.createElement("img")
-	img.className = "lazyload"
-	img.setAttribute("data-src", url)
-	return img
-}
+
 
 function createPost(post) {
 	const div = document.createElement("div")
@@ -184,123 +213,6 @@ function decodeHTML(html) {
 	return textarea.value
 }
 
-function getDeviantart(url) {
-	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url="
-	const img = createImg()
 
-	scriptRequestPromise(backendURL + url)
-		.then(json => img.setAttribute("data-src", json.url))
 
-	return img
-}
 
-function getImgur(url) {
-	const clientID = "1db5a663e63400b"
-	const requestURL = url.replace("imgur.com", "api.imgur.com/3").replace("/a/", "/album/")
-	const options = {
-		headers: {
-			Authorization: `Client-ID ${clientID}`
-		}
-	}
-
-	const elem = document.createElement("div")
-
-	const promise = fetch(requestURL, options)
-		.then(resp => resp.json())
-		.then(json => {
-			json = json.data
-
-			if (json.images.length == 1) {
-				const img = createImg(json.images[0].link)
-				img.style.width = "100%"
-				elem.appendChild(img)
-				return
-			}
-
-			const album = createAlbum()
-
-			json.images.forEach(image => {
-				album.addImage(image.link)
-			})
-
-			elem.appendChild(album)
-		})
-
-	return elem
-}
-
-function createAlbum() {
-	const album = document.createElement("div")
-	const images = document.createElement("div")
-	const left = document.createElement("div")
-	const right = document.createElement("div")
-
-	album.className = "album"
-	images.className = "album-images"
-	left.className = "album-control album-left"
-	right.className = "album-control album-right"
-
-	album.addImage = function (url) {
-		const img = createImg(url)
-		images.appendChild(img)
-	}
-
-	let i = 0
-
-	left.onclick = function () {
-		if (i > 0) {
-			images.style.right = images.children[--i].offsetLeft + "px"
-			right.style.display = "block"
-			if (i == 0) {
-				left.style.display = "none"
-			}
-		}
-	}
-
-	right.onclick = function () {
-		if (i + 1 < images.children.length) {
-			images.style.right = images.children[++i].offsetLeft + "px"
-			left.style.display = "block"
-			if (i == images.children.length - 1) {
-				right.style.display = "none"
-			}
-		}
-	}
-
-	album.appendChild(images)
-	album.appendChild(left)
-	album.appendChild(right)
-
-	return album
-}
-
-function scriptRequestPromise(jsonpUrl) {
-	let resolves = null
-	let rejects = null
-
-	const returnValue = new Promise((resolve, reject) => {
-		resolves = resolve
-		rejects = reject
-	})
-
-	scriptRequest(jsonpUrl, resolves, rejects)
-
-	return returnValue
-}
-
-function scriptRequest(path, success, error) {
-	var xhr = new XMLHttpRequest()
-	xhr.onreadystatechange = function () {
-		if (xhr.readyState === XMLHttpRequest.DONE) {
-			if (xhr.status === 200) {
-				if (success)
-					success(JSON.parse(xhr.responseText))
-			} else {
-				if (error)
-					error(xhr)
-			}
-		}
-	}
-	xhr.open("GET", path, true)
-	xhr.send()
-}
