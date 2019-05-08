@@ -29,7 +29,7 @@ window.addEventListener("scroll", function () {
 	if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
 
 		// TODO: Searchbar shouldn't work this way
-		if (!isLoading && searchbar.value == "") {
+		if (!isLoading && searchbar.value === "") {
 			isLoading = true
 
 			requestSubreddit(reddit.subreddit, reddit.sortMethod, reddit.lastPostId, reddit.limit)
@@ -210,7 +210,7 @@ function getImgur(url) {
 		.then(json => {
 			json = json.data
 
-			if (json.images.length == 1) {
+			if (json.images.length === 1) {
 				const img = createImg(json.images[0].link)
 				img.style.width = "100%"
 				elem.appendChild(img)
@@ -251,7 +251,7 @@ function createAlbum() {
 		if (i > 0) {
 			images.style.right = images.children[--i].offsetLeft + "px"
 			right.style.display = "block"
-			if (i == 0) {
+			if (i === 0) {
 				left.style.display = "none"
 			}
 		}
@@ -261,7 +261,7 @@ function createAlbum() {
 		if (i + 1 < images.children.length) {
 			images.style.right = images.children[++i].offsetLeft + "px"
 			left.style.display = "block"
-			if (i == images.children.length - 1) {
+			if (i === images.children.length - 1) {
 				right.style.display = "none"
 			}
 		}
