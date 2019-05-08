@@ -92,18 +92,20 @@ function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
 		  .then(posts => addPosts(posts));
 }
     
-async function addPosts(posts) {
-	for (i of posts) {
-		div = await createPost(i.data)
+function addPosts(posts) {
+	let i = ribbon.children.length
+
+	posts.forEach(post => {
+		const div = createPost(post.data)
 		ribbon.appendChild(div)
-	}
+	})
 
 	ribbonIso.reloadItems()
 	ribbonIso.arrange()
 
-	Array.from(ribbon.children).forEach( (post, i) => {
-		flex.add(i, post.innerText)
-	});
+	for (; i < ribbon.children.length; i++) {
+		flex.add(i, ribbon.children[i].innerText)
+	}
 
 	lastPostId = posts[posts.length - 1].data.name
 }
