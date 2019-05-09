@@ -10,7 +10,7 @@ const flex = new FlexSearch()
 const reddit = {
 	subreddit: "",
 	sortMethod: "hot",
-	lastPostId: '',
+	lastPostId: "",
 	limit: 70,
 	time: ""
 }
@@ -20,44 +20,42 @@ let enabledAutoload = false
 let isLoading = false
 
 
-
+init()
 loadSubreddit("/r/awwnime")
 
 
+function init() {
+	document.addEventListener("lazyloaded", () => {
+		ribbonIso.layout()
+	})
 
-document.addEventListener("lazyloaded", () => {
-	ribbonIso.layout()
-})
+	window.addEventListener("scroll", function () {
+		if (!enabledAutoload) { return }
+		if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
 
-window.addEventListener("scroll", function () {
-	if (!enabledAutoload) { return }
-	if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+			// TODO: Searchbar shouldn't work this way
+			if (!isLoading && searchbar.value === "") {
+				isLoading = true
 
-		// TODO: Searchbar shouldn't work this way
-		if (!isLoading && searchbar.value === "") {
-			isLoading = true
-
-			requestSubreddit(reddit.subreddit, reddit.sortMethod, reddit.lastPostId, reddit.limit)
-				.then(() => isLoading = false)
-		}
-	}
-})
-
-searchbar.addEventListener('keyup', (e) => {
-
-	ribbonIso.arrange({
-		filter(elm) {
-			const request = searchbar.value
-			const result = flex.search(request)
-
-			if (request === '') {
-				return true
+				requestSubreddit(reddit.subreddit, reddit.sortMethod, reddit.lastPostId, reddit.limit)
+					.then(() => isLoading = false)
 			}
-
-			return result.includes([...ribbon.children].indexOf(elm))
 		}
 	})
-})
+
+	searchbar.addEventListener("keyup", (e) => {
+		if (searchbar.value !== "") {
+			ribbonIso.arrange({
+				filter(elm) {
+					const request = searchbar.value
+					const result = flex.search(request)
+
+					return result.includes([...ribbon.children].indexOf(elm))
+				}
+			})
+		}
+	})
+}
 
 function loadSubreddit(subreddit) {
 
@@ -66,8 +64,8 @@ function loadSubreddit(subreddit) {
 	ribbonIso = new Isotope(ribbon, {
 		// transitionDuration: 0,
 		percentPosition: true,
-		itemSelector: '.reddit-post',
-		layoutMode: 'masonry',
+		itemSelector: ".reddit-post",
+		layoutMode: "masonry",
 		masonry: {
 			fitWidth: true,
 			gutter: 10
@@ -184,7 +182,7 @@ function searchSubreddit(query, subreddit = "", sort = "", after = "") {
 }
 
 function decodeHTML(html) {
-	const textarea = document.createElement('textarea')
+	const textarea = document.createElement("textarea")
 	textarea.innerHTML = html
 	return textarea.value
 }
