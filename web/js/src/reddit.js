@@ -1,5 +1,6 @@
-import "lazysizes";
+import "lazysizes"
 
+var fetchJsonp = require("fetch-jsonp")
 var Isotope = require("isotope-layout")
 var FlexSearch = require("flexsearch")
 
@@ -21,7 +22,7 @@ let isLoading = false
 
 
 init()
-loadSubreddit("/r/unixporn")
+loadSubreddit("/r/dfo")
 
 
 function init() {
@@ -202,14 +203,17 @@ function openPost(id) {
 
 function searchSubreddit(query, subreddit = "", sort = "", after = "") {
 	const url = `https://reddit.com${subreddit}/search/.json?q=${query}&restrict_sr=1&jsonp=?`
-	return scriptRequestPromise(url).then(json => json.data.children)
+	return fetchJsonp(url)
+		.then(resp => resp.json())
+		.then(json => json.data.children)
 }
 
 function getDeviantart(url) {
 	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url="
 	const img = createImg()
 
-	scriptRequestPromise(backendURL + url)
+	fetchJsonp(backendURL + url)
+		.then(resp => resp.json())
 		.then(json => img.setAttribute("data-src", json.url))
 
 	return img
@@ -302,35 +306,4 @@ function createAlbum() {
 	album.appendChild(right)
 
 	return album
-}
-
-function scriptRequestPromise(jsonpUrl) {
-	let resolves = null
-	let rejects = null
-
-	const returnValue = new Promise((resolve, reject) => {
-		resolves = resolve
-		rejects = reject
-	})
-
-	scriptRequest(jsonpUrl, resolves, rejects)
-
-	return returnValue
-}
-
-function scriptRequest(path, success, error) {
-	var xhr = new XMLHttpRequest()
-	xhr.onreadystatechange = function () {
-		if (xhr.readyState === XMLHttpRequest.DONE) {
-			if (xhr.status === 200) {
-				if (success)
-					success(JSON.parse(xhr.responseText))
-			} else {
-				if (error)
-					error(xhr)
-			}
-		}
-	}
-	xhr.open("GET", path, true)
-	xhr.send()
 }
