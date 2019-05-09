@@ -92,7 +92,7 @@ function clearRibbon() {
 }
 
 function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
-	const url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}`;
+	const url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}&raw_json=1`;
 
 	return scriptRequestPromise(url)
 		  .then(json => json.data.children)
@@ -149,7 +149,7 @@ function createPost(post) {
 			div.appendChild(createImg(previewURL))
 			break
 		case "rich:video":
-			div.innerHTML += decodeHTML(post.media.oembed.html)
+			div.innerHTML += post.media.oembed.html
 			div.querySelector("iframe").className = "lazyload"
 			break
 
@@ -168,7 +168,7 @@ function createPost(post) {
 
 		default:
 			const textNode = document.createElement("div")
-			div.innerHTML += decodeHTML(post.selftext_html)
+			div.innerHTML += post.selftext_html
 	}
 
 	div.appendChild(a)
@@ -179,12 +179,6 @@ function createPost(post) {
 function searchSubreddit(query, subreddit = "", sort = "", after = "") {
 	const url = `https://reddit.com${subreddit}/search/.json?q=${query}&restrict_sr=1&jsonp=?`
 	return scriptRequestPromise(url).then(json => json.data.children)
-}
-
-function decodeHTML(html) {
-	const textarea = document.createElement("textarea")
-	textarea.innerHTML = html
-	return textarea.value
 }
 
 function getDeviantart(url) {
