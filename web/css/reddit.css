@@ -35,15 +35,28 @@ body {
 	border: 1px solid rgb(129, 131, 132);
 }
 
-.reddit-post > h2 {
+.post-title {
 	color: rgb(215, 218, 220);
 	overflow: hidden;
-	white-space: nowrap;
 	font-size: 18px;
 	font-weight: 500;
 	line-height: 22px;
-	padding: 0 10px;
+	padding: 0 2px;
 	margin: 0;
+}
+
+.post-content {
+	width: 100%;
+	margin: 8px auto 0 auto;
+	overflow: hidden;
+}
+
+.post-content > img {
+	width: 100%;
+}
+
+.album-images > * {
+	width: 310px;
 }
 
 .reddit-post > a {
@@ -56,11 +69,6 @@ body {
 	text-overflow: ellipsis;
 	margin-top: 5px;
 	width: 200px;
-}
-
-.reddit-post > :nth-child(2) {
-	width: 100%;
-	margin: 8px auto 0 auto;
 }
 
 .md {

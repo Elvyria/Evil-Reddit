@@ -21,7 +21,7 @@ let isLoading = false
 
 
 init()
-loadSubreddit("/r/awwnime")
+loadSubreddit("/r/unixporn")
 
 
 function init() {
@@ -58,7 +58,6 @@ function init() {
 }
 
 function loadSubreddit(subreddit) {
-
 	clearRibbon()
 
 	ribbonIso = new Isotope(ribbon, {
@@ -79,7 +78,6 @@ function loadSubreddit(subreddit) {
 }
 
 function clearRibbon() {
-
 	while (ribbon.children[0]) {
 		ribbon.removeChild(ribbon.firstChild)
 	}
@@ -124,56 +122,77 @@ function createImg(url) {
 	return img
 }
 
+function createVideo(url) {
+	const video = document.createElement("video")
+	video.setAttribute("controls", true)
+	const source = document.createElement("source")
+	source.src = url
+	video.appendChild(source)
+	return video
+}
+
 function createPost(post) {
 	const div = document.createElement("div")
-	div.id = post.name
+	div.id = post.id
 	div.className = "reddit-post"
 
-	const h2 = document.createElement("h2")
+	const title = document.createElement("h2")
 	// Such posts require innerHTML instead of textContent
 	// (reddit.com/r/awwnime/comments/bhew2y/the_rainy_season_hero_froppy_3_boku_no_hero/)
-	h2.innerHTML = post.title
-	div.appendChild(h2)
+	title.innerHTML = post.title
+	title.className = "post-title"
+	div.appendChild(title)
 
 	const a = document.createElement("a")
 	a.href = post.url
 	a.textContent = post.url.replace("https://", "").replace("www.", "")
 
 	// TODO: Simplify
+	const content = document.createElement("div")
+	content.className = "post-content"
 	switch (post.post_hint) {
-
 		case "image":
 			// let previewURL = post.preview.images[0].source.url.replace(/&amp;/g, "&")
 			// Killing quality, but saving a bunch of bandwidth.
 			const previewURL = post.preview.images[0].resolutions[2].url.replace(/&amp;/g, "&")
-			div.appendChild(createImg(previewURL))
+			content.appendChild(createImg(previewURL))
 			break
 		case "rich:video":
-			div.innerHTML += post.media.oembed.html
-			div.querySelector("iframe").className = "lazyload"
+			content.innerHTML += post.media.oembed.html
+			content.querySelector("iframe").className = "lazyload"
 			break
-
 		case "link":
 			// TODO: Extract to prevent switch ladders.
 			switch (post.domain) {
 				case "imgur.com":
-					div.appendChild(getImgur(post.url))
+					content.appendChild(getImgur(post.url))
 					break
 
 				case "deviantart.com":
-					div.appendChild(getDeviantart(post.url))
+					content.appendChild(getDeviantart(post.url))
 					break
 			}
 			break
-
 		default:
 			const textNode = document.createElement("div")
-			div.innerHTML += post.selftext_html
+			content.innerHTML += post.selftext_html
 	}
 
+	div.appendChild(content)
 	div.appendChild(a)
 
 	return div
+}
+
+function getPost(id) {
+	const url = `https://reddit.com/${permalink}.json?raw_json=1`
+	return scriptRequestPromise(url).then(json => json[0].data.children[0].data)
+}
+
+function openPost(id) {
+	const data = getPost(id)
+	const div = document.getElementById()
+	div.style.display = "block"
 }
 
 function searchSubreddit(query, subreddit = "", sort = "", after = "") {
@@ -217,7 +236,11 @@ function getImgur(url) {
 			const album = createAlbum()
 
 			json.images.forEach(image => {
-				album.addImage(image.link)
+				if (image.type.includes("image")) {
+					album.addImage(image.link)
+				} else if (image.type.includes("video")) {
+					album.addVideo(image.link)
+				}
 			})
 
 			elem.appendChild(album)
@@ -240,6 +263,11 @@ function createAlbum() {
 	album.addImage = function (url) {
 		const img = createImg(url)
 		images.appendChild(img)
+	}
+
+	album.addVideo = function (url) {
+		const video = createVideo(url)
+		images.appendChild(video)
 	}
 
 	let i = 0

@@ -11,10 +11,6 @@
 	transition: right 0.4s;
 }
 
-.album-images > img {
-	width: 310px;
-}
-
 .album-control {
 	position: absolute;
 	width: 10px;
