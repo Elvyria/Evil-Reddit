@@ -32,8 +32,6 @@ function init() {
 	window.addEventListener("scroll", function () {
 		if (!enabledAutoload) { return }
 		if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
-
-			// TODO: Searchbar shouldn't work this way
 			if (!isLoading && searchbar.value === "") {
 				isLoading = true
 
@@ -92,9 +90,9 @@ function clearRibbon() {
 function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
 	const url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}&raw_json=1`;
 
-	return scriptRequestPromise(url)
-		  .then(json => json.data.children)
-		  .then(posts => addPosts(posts));
+	return fetch(url)
+		.then(resp => resp.json())
+		.then(json => addPosts(json.data.children));
 }
     
 function addPosts(posts) {
@@ -152,9 +150,10 @@ function createPost(post) {
 	content.className = "post-content"
 	switch (post.post_hint) {
 		case "image":
-			// let previewURL = post.preview.images[0].source.url.replace(/&amp;/g, "&")
-			// Killing quality, but saving a bunch of bandwidth.
-			const previewURL = post.preview.images[0].resolutions[2].url.replace(/&amp;/g, "&")
+			const previewURL = post.preview.images[0].source.url
+			if (post.preview.images[0].resolutions.length > 2) {
+				const previewURL = post.preview.images[0].resolutions[2].url
+			}
 			content.appendChild(createImg(previewURL))
 			break
 		case "hosted:video":
@@ -178,8 +177,10 @@ function createPost(post) {
 			}
 			break
 		default:
-			const textNode = document.createElement("div")
-			content.innerHTML += post.selftext_html
+			if (post.selftext_html != null) {
+				const textNode = document.createElement("div")
+				content.innerHTML += post.selftext_html
+			}
 	}
 
 	div.appendChild(content)
@@ -190,7 +191,7 @@ function createPost(post) {
 
 function getPost(id) {
 	const url = `https://reddit.com/${permalink}.json?raw_json=1`
-	return scriptRequestPromise(url).then(json => json[0].data.children[0].data)
+	return fetch(url).then(json => json[0].data.children[0].data)
 }
 
 function openPost(id) {
