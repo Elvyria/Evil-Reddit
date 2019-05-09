@@ -51,7 +51,7 @@ body {
 	overflow: hidden;
 }
 
-.post-content > img {
+.post-content > * {
 	width: 100%;
 }
 

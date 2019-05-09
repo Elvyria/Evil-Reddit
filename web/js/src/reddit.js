@@ -157,6 +157,10 @@ function createPost(post) {
 			const previewURL = post.preview.images[0].resolutions[2].url.replace(/&amp;/g, "&")
 			content.appendChild(createImg(previewURL))
 			break
+		case "hosted:video":
+			const video = createVideo(post.media.reddit_video.fallback_url)
+			content.appendChild(video)
+			break
 		case "rich:video":
 			content.innerHTML += post.media.oembed.html
 			content.querySelector("iframe").className = "lazyload"
