@@ -4,20 +4,6 @@ body {
 	overflow-x: hidden;
 }
 
-.search {
-	width: 200px;
-	margin: 0 auto;
-}
-
-.search > input {
-	text-align: center;
-	width: 100%;
-}
-
-.search > input:focus {
-	outline: none;
-}
-
 .reddit-ribbon {
 	margin: 70px auto 0 auto;
 }

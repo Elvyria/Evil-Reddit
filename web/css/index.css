@@ -1,0 +1,66 @@
+body {
+	background: url("../assets/background.png") no-repeat;
+	background-size: 100%;
+	overflow-x: hidden;
+}
+
+#searchbar {
+	padding-top: 12%;
+	margin: auto;
+	color: white;
+	width: max-content;
+	text-align: center;
+}
+
+#search-input {
+	width: 18vw;
+	height: 40pt;
+	color: white;
+	background-color: transparent;
+	text-align: center;
+	font-size: 20pt;
+	font-family: "Jura";
+	border-color: transparent;
+	border-bottom-width: 1px;
+	margin-bottom: 10px;
+	/* Attempt to make text fade from left and right side */
+	/* mask-image: linear-gradient(to right, rgba(255, 255, 255, 1) 49%, rgba(255, 255, 255, 0) 100%); */
+}
+
+#search {
+	border-bottom: solid 2px white;
+}
+
+#search-input::placeholder {
+	font-size: 40pt;
+	font-family: "Noto Sans JP";
+	color: white;
+	opacity: 1;
+	transition: opacity 2s;
+}
+
+#search-input:focus::placeholder {
+	opacity: 0;
+}
+
+#time {
+	font-family: "Jura";
+	font-size: 16pt;
+	padding-top: 5px;
+}
+
+@font-face {
+	font-family: "Jura";
+	src:
+	url("../fonts/Jura/Jura-Regular.ttf"),
+	url("../fonts/Jura/Jura-Bold.ttf"),
+	url("../fonts/Jura/Jura-Light.ttf"),
+	url("../fonts/Jura/Jura-Medium.ttf"),
+	url("../fonts/Jura/Jura-SemiBold.ttf");
+}
+
+@font-face {
+	font-family: "Noto Sans JP";
+	src:
+	url("../fonts/Noto Sans JP/NotoSansJP-Light.otf");
+}

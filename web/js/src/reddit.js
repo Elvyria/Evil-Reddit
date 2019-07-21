@@ -20,11 +20,6 @@ let ribbonIso = null
 let enabledAutoload = false
 let isLoading = false
 
-
-init()
-loadSubreddit("/r/dfo")
-
-
 function init() {
 	document.addEventListener("lazyloaded", () => {
 		ribbonIso.layout()
@@ -199,6 +194,13 @@ function openPost(id) {
 	const data = getPost(id)
 	const div = document.getElementById()
 	div.style.display = "block"
+}
+
+function searchSubredditName(query, exact = false) {
+	const url = `https://reddit.com/api/search_reddit_names.json?query=${query}&exact=${exact}`
+	return fetchJsonp(url)
+		.then(resp => resp.json())
+		.then(json => json.names)
 }
 
 function searchSubreddit(query, subreddit = "", sort = "", after = "") {
