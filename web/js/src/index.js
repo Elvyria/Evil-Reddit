@@ -8,7 +8,9 @@ const time = document.getElementById("time")
 function gComplete(query) {
 	const url = "https://www.google.com/complete/search?client=firefox&q=" + query
 
-	return fetch(url).then(resp => resp.json())
+	return fetch(url)
+		.then(resp => resp.json())
+		.then(json => json[1])
 }
 
 // Update time is broken here, investigation required
