@@ -1,10 +1,13 @@
 const path = require('path');
 
 module.exports = {
-	entry: './js/src/reddit.js',
+	entry: {
+		index: './js/src/index.js',
+		reddit: './js/src/reddit.js',
+	},
 	mode: 'development',
 	output: {
-		filename: 'reddit.bundle.js',
+		filename: '[name].bundle.js',
 		path: path.resolve(__dirname, 'js')
 	}
 };
