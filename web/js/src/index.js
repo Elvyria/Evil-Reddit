@@ -1,24 +1,25 @@
+
+var fetchJsonp = require("fetch-jsonp")
+
 const searchbar = document.getElementById("searchbar")
 const input = document.getElementById("search-input")
 const time = document.getElementById("time")
 
-// updateTime()
-
+updateTime()
 
 function gComplete(query) {
 	const url = "https://www.google.com/complete/search?client=firefox&q=" + query
 
-	return fetch(url)
+	return fetchJsonp(url)
 		.then(resp => resp.json())
 		.then(json => json[1])
 }
 
-// Update time is broken here, investigation required
 // Time zone is not implemented
 function updateTime() {
 	const current = new Date()
 	time.innerText = addZero(current.getHours()) + ':' + addZero(current.getMinutes())
-	setInterval(updateTime, (60 - current.getSeconds()) * 1000)
+	setTimeout(updateTime, (60 - current.getSeconds()) * 1000)
 }
 
 function addZero(n) {
