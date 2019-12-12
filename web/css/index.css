@@ -2,6 +2,7 @@ body {
 	overflow-x: hidden;
 	padding: 0;
 	margin: 0;
+	background-color: black;
 }
 
 #main {
@@ -76,8 +77,19 @@ body {
 #reddit-links {
 }
 
-.link-selected:before {
+
+#reddit-links a {
+	text-decoration: none;
+	color: white;
+}
+
+#reddit-links li:hover::before {
+	display: block;
+}
+
+#reddit-links li::before {
 	content: ">";
+	display: none;
 	position: absolute;
 	margin-left: -20px;
 	color: #8dc8e9;
