@@ -116,6 +116,7 @@ function createImg(url) {
 	const img = document.createElement("img")
 	img.className = "lazyload"
 	img.setAttribute("data-src", url)
+	img.setAttribute("referrerpolicy", "no-referrer")
 	return img
 }
 
