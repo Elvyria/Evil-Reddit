@@ -47,18 +47,6 @@ body {
 	width: 310px;
 }
 
-.reddit-post > a {
-	display: block;
-	font-size: 12px;
-	text-decoration: none;
-	color: rgb(79, 188, 255);
-	overflow: hidden;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-	margin-top: 5px;
-	width: 200px;
-}
-
 .md {
 	font-family: Noto Sans, Arial, sans-serif;
 	font-size: 14px;

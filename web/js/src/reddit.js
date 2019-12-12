@@ -141,10 +141,6 @@ function createPost(post) {
 	title.className = "post-title"
 	div.appendChild(title)
 
-	const a = document.createElement("a")
-	a.href = post.url
-	a.textContent = post.url.replace("https://", "").replace("www.", "")
-
 	// TODO: Simplify
 	const content = document.createElement("div")
 	content.className = "post-content"
@@ -184,7 +180,6 @@ function createPost(post) {
 	}
 
 	div.appendChild(content)
-	div.appendChild(a)
 
 	return div
 }
