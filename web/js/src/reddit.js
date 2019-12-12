@@ -20,6 +20,9 @@ let ribbonIso = null
 let enabledAutoload = false
 let isLoading = false
 
+init()
+loadSubreddit(window.location.pathname)
+
 function init() {
 	document.addEventListener("lazyloaded", () => {
 		ribbonIso.layout()
