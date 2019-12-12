@@ -43,10 +43,6 @@ body {
 	width: 100%;
 }
 
-.album-images > * {
-	width: 310px;
-}
-
 .md {
 	font-family: Noto Sans, Arial, sans-serif;
 	font-size: 14px;
