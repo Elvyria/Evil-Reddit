@@ -1,7 +1,7 @@
 import "lazysizes"
+import Bricks from 'bricks.js'
 
 var fetchJsonp = require("fetch-jsonp")
-var Isotope = require("isotope-layout")
 var FlexSearch = require("flexsearch")
 
 const ribbon = document.querySelector(".reddit-ribbon")
@@ -16,16 +16,25 @@ const reddit = {
 	time: ""
 }
 
-let ribbonIso = null
 let enabledAutoload = false
 let isLoading = false
+
+const instance = Bricks({
+	container: ribbon,
+	packed: 'data-packed',
+	sizes: [{ columns: 4, gutter: 10 }],
+	position: false
+})
+
+instance.resize(true)
 
 init()
 loadSubreddit(window.location.pathname)
 
 function init() {
 	document.addEventListener("lazyloaded", () => {
-		ribbonIso.layout()
+		instance.pack()
+		instance.update()
 	})
 
 	window.addEventListener("scroll", function () {
@@ -39,34 +48,10 @@ function init() {
 			}
 		}
 	})
-
-	searchbar.addEventListener("keyup", (e) => {
-		if (searchbar.value !== "") {
-			ribbonIso.arrange({
-				filter(elm) {
-					const request = searchbar.value
-					const result = flex.search(request)
-
-					return result.includes([...ribbon.children].indexOf(elm))
-				}
-			})
-		}
-	})
 }
 
 function loadSubreddit(subreddit) {
 	clearRibbon()
-
-	ribbonIso = new Isotope(ribbon, {
-		// transitionDuration: 0,
-		percentPosition: true,
-		itemSelector: ".reddit-post",
-		layoutMode: "masonry",
-		masonry: {
-			fitWidth: true,
-			gutter: 10
-		}
-	})
 
 	requestSubreddit(subreddit, reddit.sortMethod)
 
@@ -80,10 +65,6 @@ function clearRibbon() {
 	}
 
 	flex.clear()
-
-	if (Isotope.data(ribbon)) {
-		ribbonIso.destroy()
-	}
 }
 
 function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
@@ -102,8 +83,7 @@ function addPosts(posts) {
 		ribbon.appendChild(div)
 	})
 
-	ribbonIso.reloadItems()
-	ribbonIso.arrange()
+	instance.pack()
 
 	for (; i < ribbon.children.length; i++) {
 		flex.add(i, ribbon.children[i].innerText)
