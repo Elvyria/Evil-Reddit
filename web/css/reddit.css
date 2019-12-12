@@ -43,6 +43,17 @@ body {
 	width: 100%;
 }
 
+.post-content > img.blur-up {
+	-webkit-filter: blur(5px);
+	filter: blur(5px);
+	transition: filter 400ms, -webkit-filter 400ms;
+}
+
+.post-content > img.blur-up.lazyloaded {
+	-webkit-filter: blur(0);
+	filter: blur(0);
+}
+
 .md {
 	font-family: Noto Sans, Arial, sans-serif;
 	font-size: 14px;

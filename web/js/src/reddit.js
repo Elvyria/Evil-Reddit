@@ -92,9 +92,10 @@ function addPosts(posts) {
 	reddit.lastPostId = posts[posts.length - 1].data.name
 }
 
-function createImg(url) {
+function createImg(url, placeholder) {
 	const img = document.createElement("img")
-	img.className = "lazyload"
+	img.src = placeholder
+	img.className = "lazyload blur-up"
 	img.setAttribute("data-src", url)
 	img.setAttribute("referrerpolicy", "no-referrer")
 	return img
@@ -126,11 +127,15 @@ function createPost(post) {
 	content.className = "post-content"
 	switch (post.post_hint) {
 		case "image":
-			const previewURL = post.preview.images[0].source.url
-			if (post.preview.images[0].resolutions.length > 2) {
-				const previewURL = post.preview.images[0].resolutions[2].url
-			}
-			content.appendChild(createImg(previewURL))
+			const length = post.preview.images[0].resolutions.length
+			let previewURL
+			if (length >= 4) {
+				previewURL = post.preview.images[0].resolutions[3].url
+			} else {
+				previewURL = post.preview.images[0].resolutions[length - 1].url
+			} 
+			const placeholderURL = post.preview.images[0].resolutions[0].url
+			content.appendChild(createImg(previewURL, placeholderURL))
 			break
 		case "hosted:video":
 			const video = createVideo(post.media.reddit_video.fallback_url)
