@@ -14,7 +14,7 @@ body {
 }
 
 #searchbar {
-	width: 18%;
+	width: 20%;
 	padding-top: 10%;
 	margin: auto;
 	text-align: center;
@@ -27,6 +27,7 @@ body {
 	color: white;
 	opacity: 1;
 	transition: opacity 0.5s;
+	padding-bottom: 20px;
 }
 
 #searchbar > input {
@@ -45,55 +46,94 @@ body {
 	/* mask-image: linear-gradient(to right, rgba(255, 255, 255, 1) 49%, rgba(255, 255, 255, 0) 100%); */
 }
 
+#search-suggestions {
+	display: flex;
+	justify-content: center;
+	font-family: "Jura";
+}
+
+#search-suggestions > * {
+	margin: 0 10px;
+}
+
 #time {
 	font-family: "Jura";
-	font-size: 16pt;
-	padding-top: 15px;
+	font-size: 1.5em;
 }
 
 #services {
 	display: flex;
-	width: 40%;
+	width: 45%;
 	font-family: "Jura";
 	margin: auto;
+	justify-content: space-between;
 }
 
-#services > ul {
+#services ul {
 	list-style: none;
 	padding: 0;
 }
 
-#services > ul > li {
-	font-size: 1.3em;
-	cursor: pointer;
-	margin-left: 20%;
+#services ul::before {
+	content: '';
+	height: 100%;
+	width: 100%;
+	overflow: hidden;
+	background-color: white;
+	transition-duration: 400ms;
 }
+
+#services ul:hover::before {
+	height: 0;
+}
+
+#services li {
+	margin: 10px auto auto 20%;
+}
+
+#services li::before {
+	content: "";
+	position: relative;
+	display: inline-block;
+	background: white;
+	bottom: 0;
+	left: 0;
+	width: 2px;
+	height: 0;
+	transition: all 0.1s 0.1s ease;
+}
+
+#services li:hover::before {
+	height: 40px;
+}
+
+#services li > * {
+	font-size: 1.3em;
+	font-family: "Jura";
+	color: white;
+	text-decoration: none;
+	background-color: transparent;
+	border: none;
+	cursor: pointer;
+	padding: 0;
+}
+
 
 .service-header {
 	font-size: 3em;
-	padding-bottom: 10px;
+	white-space: nowrap;
 }
 
-#reddit-links {
+.service-header::before {
+	content: '「';
+	color: red;
 }
 
-
-#reddit-links a {
-	text-decoration: none;
-	color: white;
+.service-header::after {
+	content: '」';
+	color: red;
 }
 
-#reddit-links li:hover::before {
-	display: block;
-}
-
-#reddit-links li::before {
-	content: ">";
-	display: none;
-	position: absolute;
-	margin-left: -20px;
-	color: #8dc8e9;
-}
 
 @font-face {
 	font-family: "Jura";

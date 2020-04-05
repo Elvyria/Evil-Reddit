@@ -1,247 +1,171 @@
 import "lazysizes"
 import Bricks from 'bricks.js'
+import videojs from "video.js"
+import reddit from './reddit.api.js'
 
-var fetchJsonp = require("fetch-jsonp")
-var FlexSearch = require("flexsearch")
+const fetchJsonp = require("fetch-jsonp")
 
+const favicon = document.getElementById("icon")
 const ribbon = document.querySelector(".reddit-ribbon")
 const searchbar = document.querySelector("input")
-const flex = new FlexSearch()
 
-const reddit = {
-	subreddit: "",
-	sortMethod: "hot",
-	lastPostId: "",
-	limit: 70,
-	time: ""
-}
+loadConfig("../config.json").then(main)
 
-let enabledAutoload = false
-let isLoading = false
+function main(config) {
+	let isLoading = false
 
-const instance = Bricks({
-	container: ribbon,
-	packed: 'data-packed',
-	sizes: [{ columns: 4, gutter: 10 }],
-	position: false
-})
+	const brick = Bricks({
+		container: ribbon,
+		packed: 'data-packed',
+		sizes: [{ columns: config.reddit.columns, gutter: config.reddit.gutter }],
+		position: false
+	}).resize(true)
 
-instance.resize(true)
+	videojs.log.level('off');
 
-init()
-loadSubreddit(window.location.pathname)
+	const subreddit = window.location.pathname
 
-function init() {
-	document.addEventListener("lazyloaded", () => {
-		instance.pack()
-		instance.update()
-	})
+	window.addEventListener("scroll", () => {
+		if (!isLoading && ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000)) {
+			isLoading = true
 
-	window.addEventListener("scroll", function () {
-		if (!enabledAutoload) { return }
-		if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
-			if (!isLoading && searchbar.value === "") {
-				isLoading = true
-
-				requestSubreddit(reddit.subreddit, reddit.sortMethod, reddit.lastPostId, reddit.limit)
-					.then(() => isLoading = false)
-			}
+			reddit.requestPosts(subreddit, "hot", ribbon.lastChild.name, "70").then(ribbon.addPosts).then(() => {
+				isLoading = false
+				brick.update()
+			})
 		}
 	})
-}
 
-function loadSubreddit(subreddit) {
-	clearRibbon()
 
-	requestSubreddit(subreddit, reddit.sortMethod)
-
-	reddit.subreddit = subreddit
-	enabledAutoload = true
-}
-
-function clearRibbon() {
-	while (ribbon.children[0]) {
-		ribbon.removeChild(ribbon.firstChild)
-	}
-
-	flex.clear()
-}
-
-function requestSubreddit(subreddit, sort = "hot", after = "", limit = "") {
-	const url = `http://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}&raw_json=1`;
-
-	return fetch(url)
-		.then(resp => resp.json())
-		.then(json => addPosts(json.data.children));
-}
-    
-function addPosts(posts) {
-	let i = ribbon.children.length
-
-	posts.forEach(post => {
-		const div = createPost(post.data)
-		ribbon.appendChild(div)
+	reddit.requestPosts(subreddit, "hot", "", 70).then(ribbon.addPosts).then(brick.pack)
+	reddit.requestAbout(subreddit).then(data => { 
+		document.title = data.title
+		favicon.href = url
 	})
-
-	instance.pack()
-
-	for (; i < ribbon.children.length; i++) {
-		flex.add(i, ribbon.children[i].innerText)
-	}
-
-	reddit.lastPostId = posts[posts.length - 1].data.name
 }
 
-function createImg(url, placeholder) {
-	const img = document.createElement("img")
-	img.src = placeholder
-	img.className = "lazyload blur-up"
-	img.setAttribute("data-src", url)
-	img.setAttribute("referrerpolicy", "no-referrer")
-	return img
+ribbon.addPosts = (data) => {
+	data.forEach(child => {
+		const post = createPost(child.data)
+		ribbon.appendChild(post)
+	})
 }
 
-function createVideo(url) {
-	const video = document.createElement("video")
-	video.setAttribute("controls", true)
-	const source = document.createElement("source")
-	source.src = url
-	video.appendChild(source)
-	return video
+function loadConfig(path) {
+	return fetch(path).then(resp => resp.json())
+}
+
+function openPost(url) {
+	// const data = reddit.requestPost(url)
+	// const div = document.getElementById()
+	// div.style.display = "block"
 }
 
 function createPost(post) {
 	const div = document.createElement("div")
-	div.id = post.id
+	div.name = post.name
 	div.className = "reddit-post"
+	div.permalink = post.permalink
+	div.onclick = () => { openPost(div.permalink) }
 
-	const title = document.createElement("h2")
-	// Such posts require innerHTML instead of textContent
-	// (reddit.com/r/awwnime/comments/bhew2y/the_rainy_season_hero_froppy_3_boku_no_hero/)
-	title.innerHTML = post.title
+	const title = document.createElement("div")
 	title.className = "post-title"
+
+	if (post.link_flair_text != null) {
+		const flair = createFlair(post.link_flair_text, post.link_flair_text_color, post.link_flair_background_color)
+		title.appendChild(flair)
+	}
+
+	title.innerHTML += post.title
+
 	div.appendChild(title)
 
-	// TODO: Simplify
-	const content = document.createElement("div")
-	content.className = "post-content"
-	switch (post.post_hint) {
-		case "image":
-			const length = post.preview.images[0].resolutions.length
-			let previewURL
-			if (length >= 4) {
-				previewURL = post.preview.images[0].resolutions[3].url
-			} else {
-				previewURL = post.preview.images[0].resolutions[length - 1].url
-			} 
-			const placeholderURL = post.preview.images[0].resolutions[0].url
-			content.appendChild(createImg(previewURL, placeholderURL))
-			break
-		case "hosted:video":
-			const video = createVideo(post.media.reddit_video.fallback_url)
-			content.appendChild(video)
-			break
-		case "rich:video":
-			content.innerHTML += post.media.oembed.html
-			content.querySelector("iframe").className = "lazyload"
-			break
-		case "link":
-			// TODO: Extract to prevent switch ladders.
-			switch (post.domain) {
-				case "imgur.com":
-					content.appendChild(getImgur(post.url))
-					break
-
-				case "deviantart.com":
-					content.appendChild(getDeviantart(post.url))
-					break
-			}
-			break
-		default:
-			if (post.selftext_html != null) {
-				const textNode = document.createElement("div")
-				content.innerHTML += post.selftext_html
-			}
-	}
+	const content = createContent(post)
 
 	div.appendChild(content)
 
 	return div
 }
 
-function getPost(id) {
-	const url = `https://reddit.com/${permalink}.json?raw_json=1`
-	return fetch(url).then(json => json[0].data.children[0].data)
+function createFlair(text, fg, bg) {
+	const flair = document.createElement("div")
+	flair.innerText = text
+	flair.className = "flair flair-" + fg
+	flair.style.backgroundColor = bg
+
+	return flair
 }
 
-function openPost(id) {
-	const data = getPost(id)
-	const div = document.getElementById()
-	div.style.display = "block"
+function createContent(post) {
+	const content = document.createElement("div")
+	content.className = "post-content"
+
+	if (post.post_hint === "image") {
+		const previewURL = (post.preview.images[0].resolutions.length >= 4) ? post.preview.images[0].resolutions[3].url : post.preview.images[0].resolutions[length - 1].url
+		const placeholderURL = post.preview.images[0].resolutions[0].url
+		const height = scale(post.preview.images[0].source.height, post.preview.images[0].source.width, 400)
+
+		const img = createImg(previewURL, placeholderURL, height)
+		content.appendChild(img)
+
+	} else if (post.post_hint === "hosted:video") {
+		const height = scale(post.media.reddit_video.height, post.media.reddit_video.width, 400)
+		const video = createVideo(post.media.reddit_video.hls_url, post.thumbnail, height)
+		content.appendChild(video)
+
+	} else if (post.post_hint === "rich:video") {
+		content.innerHTML += post.media.oembed.html
+		content.querySelector("iframe").className = "lazyload"
+
+	} else if (post.post_hint === "link") {
+		if (post.domain === "imgur.com") {
+			const height = scale(post.thumbnail_height, post.thumbnail_width, 400)
+			const img = createImg("", post.thumbnail, height)
+			content.appendChild(img)
+		} else {
+			const link = document.createElement("a")
+			link.href = post.url
+			content.appendChild(link)
+		}
+
+	} else if (post.selftext_html != null) {
+		const textNode = document.createElement("div")
+		content.innerHTML += post.selftext_html
+	}
+
+	return content
 }
 
-function searchSubredditName(query, exact = false) {
-	const url = `https://reddit.com/api/search_reddit_names.json?query=${query}&exact=${exact}`
-	return fetchJsonp(url)
-		.then(resp => resp.json())
-		.then(json => json.names)
-}
+function createImg(src, placeholder, height) {
+	const img = document.createElement("img")
 
-function searchSubreddit(query, subreddit = "", sort = "", after = "") {
-	const url = `https://reddit.com${subreddit}/search/.json?q=${query}&restrict_sr=1&jsonp=?`
-	return fetchJsonp(url)
-		.then(resp => resp.json())
-		.then(json => json.data.children)
-}
+	img.src = placeholder
+	img.className = "lazyload blur-up"
+	img.setAttribute("data-src", src)
+	img.setAttribute("referrerpolicy", "no-referrer")
 
-function getDeviantart(url) {
-	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url="
-	const img = createImg()
-
-	fetchJsonp(backendURL + url)
-		.then(resp => resp.json())
-		.then(json => img.setAttribute("data-src", json.url))
+	if (height) {
+		img.setAttribute("height", height + "px")
+	}
 
 	return img
 }
 
-function getImgur(url) {
-	const clientID = "1db5a663e63400b"
-	const requestURL = url.replace("imgur.com", "api.imgur.com/3").replace("/a/", "/album/")
-	const options = {
-		headers: {
-			Authorization: `Client-ID ${clientID}`
-		}
+function createVideo(src, preview, height) {
+	const video = document.createElement("video-js")
+	video.setAttribute("poster", preview)
+	if (height) {
+		video.setAttribute("height", height + "px")
 	}
 
-	const elem = document.createElement("div")
+	const source = document.createElement("source")
+	source.src = src
 
-	const promise = fetch(requestURL, options)
-		.then(resp => resp.json())
-		.then(json => {
-			json = json.data
+	video.appendChild(source)
 
-			if (json.images.length === 1) {
-				const img = createImg(json.images[0].link)
-				img.style.width = "100%"
-				elem.appendChild(img)
-				return
-			}
+	videojs(video, { controls: true })
 
-			const album = createAlbum()
-
-			json.images.forEach(image => {
-				if (image.type.includes("image")) {
-					album.addImage(image.link)
-				} else if (image.type.includes("video")) {
-					album.addVideo(image.link)
-				}
-			})
-
-			elem.appendChild(album)
-		})
-
-	return elem
+	return video
 }
 
 function createAlbum() {
@@ -255,19 +179,19 @@ function createAlbum() {
 	left.className = "album-control album-left"
 	right.className = "album-control album-right"
 
-	album.addImage = function (url) {
+	album.addImage = (url) => {
 		const img = createImg(url)
 		images.appendChild(img)
 	}
 
-	album.addVideo = function (url) {
+	album.addVideo = (url) => {
 		const video = createVideo(url)
 		images.appendChild(video)
 	}
 
 	let i = 0
 
-	left.onclick = function () {
+	left.onclick = () => {
 		if (i > 0) {
 			images.style.right = images.children[--i].offsetLeft + "px"
 			right.style.display = "block"
@@ -292,4 +216,72 @@ function createAlbum() {
 	album.appendChild(right)
 
 	return album
+}
+
+function getDeviantart(url) {
+	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url="
+	const img = createImg()
+
+	fetchJsonp(backendURL + url)
+		.then(resp => resp.json())
+		.then(json => {
+			const height = scale(json.height, json.width, 400)
+			img.src = json.thumbnail_url
+			img.setAttribute("data-src", json.url)
+			img.setAttribute("height", height + "px")
+
+			img.className = "lazyload blur-up"
+			brick.pack()
+		})
+
+	return img
+}
+
+function getImgur(url) {
+	// TODO: ClientID is incorrect and never actually worked
+	// const clientID = "1db5a663e63400b"
+	// const options = {
+	// 	headers: {
+	// 		Authorization: `Client-ID ${clientID}`
+	// 	}
+	// }
+
+	const requestURL = url.replace("imgur.com", "api.imgur.com/3").replace("/a/", "/album/")
+
+	const elem = document.createElement("div")
+
+	const promise = fetch(requestURL)
+		.then(resp => resp.json())
+		.then(json => {
+			if (json.data.images.length === 1) {
+				const img = createImg(json.data.images[0].link)
+				img.style.width = "100%"
+				elem.appendChild(img)
+				return
+			}
+
+			const album = createAlbum()
+
+			json.data.images.forEach(image => {
+				if (image.type.includes("image")) {
+					album.addImage(image.link)
+				} else if (image.type.includes("video")) {
+					album.addVideo(image.link)
+				}
+			})
+
+			elem.appendChild(album)
+		})
+
+	return elem
+}
+
+function scale(a, b, c) {
+	return Math.ceil(c * (a / b))
+}
+
+function empty(elem) {
+	while (elem.firstChild) {
+		elem.removeChild(elem.firstChild)
+	}
 }
