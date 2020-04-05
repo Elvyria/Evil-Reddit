@@ -1,12 +1,4 @@
 {
-	"UTC": 0,
-	"search-engine": {
-		"name": "DuckDuckGo",
-		"url": "https://duckduckgo.com/?q="
-	},
-	"completion-engine": {
-		"url": "https://www.google.com/complete/search?client=firefox&q="
-	},
 	"reddit": {
 		"columns": 4,
 		"gutter": 10

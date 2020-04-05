@@ -2,7 +2,6 @@ const path = require('path');
 
 module.exports = {
 	entry: {
-		index: './js/src/index.js',
 		reddit: './js/src/reddit.js',
 		redditapi: './js/src/reddit.api.js'
 	},
