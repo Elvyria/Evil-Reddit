@@ -498,12 +498,6 @@ body.vjs-full-window {
 	cursor: pointer;
 	transition: all 0.4s;
 }
-.vjs-big-play-centered .vjs-big-play-button {
-	top: 50%;
-	left: 50%;
-	margin-top: -0.81666em;
-	margin-left: -1.5em;
-}
 
 .video-js:hover .vjs-big-play-button,
 .video-js .vjs-big-play-button:focus {

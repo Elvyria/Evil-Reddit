@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width">
-		<title>Reddit</title>
+		<title>Evil-Reddit</title>
 		<link id="icon" rel="shortcut icon" href="" type="image/png"/>
 		<link rel="stylesheet" href="../css/reddit.css" type="text/css" media="all">
 		<link rel="stylesheet" href="../css/video-js.css" type="text/css" media="all">
@@ -11,15 +11,22 @@
 		<script src="../js/reddit.bundle.js" defer></script>
 	</head>
 	<body>
-		<div class="header">
-			<div class="search">
+		<div id="header">
+			<div id="search">
 				<input type="text" placeholder="探索">
-				<div class="search-tags">
-				</div>
+				<div id="search-tags"></div>
 			</div>
+		</div>
+		<div id="status">
+			<div id="spinner"></div>
 		</div>
 		<div class="reddit-ribbon">
 			<div class="sizer"></div>
+		</div>
+		<div id="overlay"></div>
+		<div id="full-post">
+			<div id="comments">
+			</div>
 		</div>
 	</body>
 </html>
