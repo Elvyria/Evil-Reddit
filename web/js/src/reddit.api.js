@@ -1,27 +1,32 @@
-let reddit = {}
+export let reddit = {}
 
-reddit.requestPosts = (subreddit, sort = "hot", after = "", limit = "70") => {
-	const url = `https://www.reddit.com${subreddit}/${sort}/.json?after=${after}&limit=${limit}&raw_json=1`;
+reddit.sortMethods = {
+	subreddit: ["hot", "new", "top", "rising"],
+	comments: ["confidence", "top", "new", "controversial", "old", "qa"]
+}
+
+reddit.requestPosts = (subreddit, sort = reddit.sortMethods.subreddit[0], after = "", limit = "100") => {
+	const url = `https://www.reddit.com/r/${subreddit}/${sort}/.json?after=${after}&limit=${limit}&raw_json=1`;
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.data.children)
 }
 
-reddit.requestPost = (permalink) => {
+reddit.requestPost = (permalink, sort = reddit.sortMethods.comments[0]) => {
 	const url = `https://www.reddit.com${permalink}.json?raw_json=1`
 	return fetch(url)
 		.then(resp => resp.json())
 }
 
 reddit.requestAbout = (subreddit) => {
-	const url = `https://www.reddit.com${subreddit}/about.json`
+	const url = `https://www.reddit.com/r/${subreddit}/about.json`
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.data)
 }
 
-reddit.requestSearch = (query, subreddit = "", sort = "", after = "") => {
-	const url = `https://www.reddit.com${subreddit}/search/.json?q=${query}&restrict_sr=1&raw_json=1`
+reddit.requestSearch = (query, subreddit = "", sort = "", after = "", limit = "100") => {
+	const url = `https://www.reddit.com/r/${subreddit}/search/.json?q=${query}&restrict_sr=1&limit=${limit}&raw_json=1`
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.data.children)
@@ -56,9 +61,3 @@ reddit.post = (data) => {
 		},
 	}
 }
-
-reddit.comment = (data) => {
-}
-
-
-export default reddit
