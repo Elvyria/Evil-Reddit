@@ -1,6 +1,4 @@
 {
-	"reddit": {
-		"columns": 4,
-		"gutter": 10
-	}
+	"columns": 4,
+	"gutter": 10
 }

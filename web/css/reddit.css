@@ -1,3 +1,8 @@
+@font-face {
+	font-family: "Nerd Font";
+	src: url("../fonts/Symbols-2048-em Nerd Font Complete.woff2") format("woff2");
+}
+
 #status {
 	position: absolute;
 	margin: auto;
@@ -51,7 +56,9 @@ body {
 	background-color: #030303;
 }
 
+/* Hidden until redesign */
 #search {
+	display: none;
 	position: absolute;
 	top: 0;
 	left: 50%;
@@ -70,8 +77,38 @@ body {
 	font-size: 1.4em;
 }
 
-.reddit-ribbon {
-	margin: 70px auto 0 auto;
+/* Hidden until redesigned */
+#sorting {
+	display: none;
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 30px;
+	margin: auto;
+	height: 200px;
+	color: gray;
+}
+
+#sorting div { 
+	font-family: "Nerd Font";
+	font-size: 2em;
+	text-align: center;
+	line-height: 25px;
+	margin-bottom: 25px;
+	cursor: pointer;
+}
+
+#sorting > div:hover {
+	transform: scale(1.3);
+	transition: 300ms ease;
+}
+
+#hot {
+	color: #E25822;
+}
+
+#reddit-ribbon {
+	margin: 20px auto 0 auto;
 }
 
 .ribbon-post {
@@ -96,6 +133,7 @@ body {
 	line-height: 22px;
 	padding: 0 2px;
 	margin: 0;
+	word-wrap: anywhere;
 }
 
 .flair {
@@ -107,11 +145,13 @@ body {
 }
 
 .flair-dark {
-	color: #000;
+	color: #111;
+	background-color: #FFF;
 }
 
 .flair-light {
-	color: #FFF;
+	color: rgb(215, 218, 220);
+	background-color: #111;
 }
 
 .post-content {
@@ -124,6 +164,35 @@ body {
 	height: 100%;
 	width: 100%;
 	object-fit: contain;
+}
+
+.external-link {
+	position: relative;
+}
+
+.external-link > img {
+	height: 100%;
+	width: 100%;
+	object-fit: contain;
+	border: 2px white solid;
+	box-sizing: border-box;
+	border-radius: 7px;
+}
+
+.external-link-icon {
+	position: absolute;
+	bottom: 3px;
+	right: 2px;
+
+	width: 26px;
+	height: 26px;
+	background-color: white;
+	font-family: "Nerd Font";
+	font-size: 20px;
+	color: black;
+	line-height: 26px;
+	text-align: center;
+	border-radius: 4px;
 }
 
 .post-content > img.blur-up {
@@ -155,8 +224,9 @@ body {
 
 	display: flex;
 	flex-flow: column wrap;
+	align-content: space-between;
 	width: 80%;
-	height: 90%;
+	height: 94%;
 	background-color: rgb(26, 26, 27);
 
 	border-radius: 20px;
@@ -166,13 +236,17 @@ body {
 
 #full-post > .post-title {
 	flex: 0 0;
-	width: 65%;
+	width: 67%;
 }
 
 #full-post > .post-content {
 	flex: 1 0;
-	width: 65%;
+	width: 67%;
 	margin: 8px 0 0 0;
+}
+
+#full-post .md {
+	overflow-y: scroll
 }
 
 #comments {
@@ -185,14 +259,23 @@ body {
 	font-size: 14px;
 	font-weight: 400;
 	font-family: Noto Sans, Arial, sans-serif;
+	padding-right: 10px;
 }
 
 .comment {
-
+	opacity: 0;
+	transition-duration: 100ms;
+	padding-bottom: 7px;
 }
 
 .comment-author {
+	color: white;
+	text-decoration: none;
 	font-weight: 600;
+}
+
+.comment-author:hover {
+	text-decoration: underline;
 }
 
 .comment-content {

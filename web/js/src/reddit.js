@@ -1,148 +1,206 @@
+import "./array.js"
+import { gfycat } from "./external.js"
+import { reddit } from "./reddit.api.js"
+
 import "lazysizes"
-import Bricks from 'bricks.js'
-import videojs from "video.js"
-import reddit from './reddit.api.js'
+import Bricks from "bricks.js"
+import Hls from "hls.js"
 
 const fetchJsonp = require("fetch-jsonp")
 
 const favicon = document.getElementById("icon")
-const ribbon = document.querySelector(".reddit-ribbon")
-const search_input = document.querySelector("input")
+const ribbon = document.getElementById("reddit-ribbon")
+const searchInput = document.querySelector("input")
 const spinner = document.getElementById("spinner")
 
 const overlay = document.getElementById("overlay")
-const full_post = document.getElementById("full-post")
+const fullPost = document.getElementById("full-post")
+const comments = document.getElementById("comments")
 
-loadConfig("../config.json").then(main)
+let hls
+
+loadConfig("/config.json").then(main)
 
 function main(config) {
-	toggleOverlay()
-
-	let isLoading = false
+	let isLoading = true
+	let end = false
 
 	const brick = Bricks({
 		container: ribbon,
 		packed: 'data-packed',
-		sizes: [{ columns: config.reddit.columns, gutter: config.reddit.gutter }],
+		sizes: [{ columns: config.columns, gutter: config.gutter }],
 		position: false
 	}).resize(true)
 
-	videojs.log.level('off');
+	//TODO: Rename me
+	const options = parseUrl(new URL(window.location.href))
 
-	//TODO:
-	const subreddit = window.location.pathname
-
+	//TODO: Move under non anonymous function
 	window.addEventListener("scroll", () => {
-		if (!isLoading && ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000)) {
+		if (!isLoading && !end && ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000)) {
 			isLoading = true
 
-			reddit.requestPosts(subreddit, "hot", ribbon.lastChild.name, 100).then(posts => {
-				ribbon.addPosts(posts)
+			reddit.requestPosts(options.subreddit, options.sorting, ribbon.lastChild.name).then(posts => {
+				end = posts.length === 0
+
+				if (!end) {
+					ribbon.addPosts(posts)
+					brick.update()
+				}
+
 				isLoading = false
-				brick.update()
 			})
 		}
 	})
 
-	search_input.addEventListener("keypress", e => {
-		if (e.keyCode === 13) {
-			search(subreddit, search_input.value)
-			brick.pack()
+	// Sort buttons
+	Array.from(document.getElementById("sorting").children).forEach((button, i) => {
+		button.onclick = () => {
+			options.sorting = reddit.sortMethods.subreddit[i]
+
+			empty(ribbon)
+			window.scrollTo(0, 0)
+			spinner.style.display = ""
+			isLoading = true
+			end = false
+
+			reddit.requestPosts(options.subreddit, options.sorting).then(data => {
+				ribbon.addPosts(data)
+				spinner.style.display = "none"
+				brick.pack()
+				isLoading = false
+			})
 		}
 	})
 
-	reddit.requestPosts(subreddit, "hot", "", 100).then(posts => {
-		ribbon.addPosts(posts)
-		spinner.style.display = "none"
-		brick.pack()
+	// TODO: History states
+	// window.addEventListener("popstate", (e) => {})
 
-		window.scrollTo(0,0);
+	// Lazyload video posters
+	document.addEventListener("lazybeforeunveil", e => {
+		if (e.target.dataset.poster)
+			e.target.poster = e.target.dataset.poster
+	});
+
+	// Delete fields after loading
+	document.addEventListener("lazyloaded", e => {
+		if (e.target.dataset.src)
+			delete e.target.dataset.src
+		if (e.target.dataset.poster)
+			delete e.target.dataset.poster
 	})
 
-	reddit.requestAbout(subreddit).then(data => {
+	searchInput.addEventListener("keypress", e => {
+		if (e.keyCode === 13) {
+			search(options.subreddit, searchInput.value).then(brick.pack)
+
+			//TODO: History states
+			// history.pushState(null, "", `/r/${options.subreddit}/search?q=${searchInput.value}`)
+		}
+	})
+
+	reddit.requestAbout(options.subreddit).then(data => {
 		document.title = data.title
 		favicon.href = data.icon_img
 	})
+
+	reddit.requestPosts(options.subreddit, options.sorting).then(data => {
+		ribbon.addPosts(data)
+		spinner.style.display = "none"
+		brick.pack()
+		isLoading = false
+	})
 }
 
+// TODO:
 ribbon.addPosts = (data) => {
 	data.forEach(child => {
 		const post = reddit.post(child.data)
-
 		const div = createPost(post)
-
 		ribbon.appendChild(div)
 	})
 }
 
-function loadConfig(path) {
-	return fetch(path).then(resp => resp.json())
+function parseUrl(url) {
+	const parts = url.pathname.split('/')
+
+	const result = {
+		subreddit: parts[2],
+		fullPost:  false,
+		sorting:   undefined,
+	}
+
+	if (parts[3] === "comments") {
+		result.sorting = url.searchParams.get("sort") ?? reddit.sortMethods.comments[0]
+		result.fullPost = true
+	} else {
+		result.sorting = reddit.sortMethods.subreddit.includes(parts[3]) ? parts[3] : reddit.sortMethods.subreddit[0]
+	}
+
+	return result
 }
 
-// TODO: Duplicate code
 function search(subreddit, query) {
 	empty(ribbon)
+
 	spinner.style.display = ""
 
-	reddit.requestSearch(query, subreddit).then(posts => {
+	window.scrollTo(0,0);
+
+	return reddit.requestSearch(query, subreddit).then(posts => {
 		ribbon.addPosts(posts)
 		spinner.style.display = "none"
-
-		window.scrollTo(0,0);
 	})
 }
 
-function openPost(div) {
-	toggleOverlay()
-	empty(full_post.children[0])
-
-	div.style.display = "none"
+function openPost(title, content, permalink) {
+	openOverlay()
+	empty(comments)
 
 	// TODO: Replies
-	reddit.requestPost(div.permalink).then(json => {
-		json[1].data.children.forEach(child => {
+	reddit.requestPost(permalink).then(json => {
+		json[1].data.children.forEach((child, i) => {
 			const comment = createComment(child.data)
-			full_post.children[2].appendChild(comment)
+			comments.appendChild(comment)
+			setTimeout(() => comment.style.opacity = 1, 15 * i);
 		})
 	})
 
-	let title = div.children[0]
-	let content = div.children[1]
+	fullPost.insertBefore(content, fullPost.firstChild)
+	fullPost.insertBefore(title, fullPost.firstChild)
 
-	let img = content.getElementsByTagName("img")[0]
-	if (img) {
-		let img_src = img.getAttribute("source")
-		if (img_src) {
-			img.src = img_src
+	// TODO:
+	const media = content.firstChild
+	if (media && media.source) {
+		media.src = media.source
+		delete media.source
+	}
+
+	// TODO: History states
+	// history.pushState(null, title.textContent, permalink)
+
+	return new Promise((resolve, reject) => {
+		overlay.onclick = () => {
+			closeOverlay()
+
+			// TODO: History states
+			// history.pushState(null, title.textContent, window.location.pathname.substring(0, window.location.pathname.indexOf("comments") - 1))
+
+			resolve()
 		}
-	}
-
-	full_post.insertBefore(content, full_post.firstChild)
-	full_post.insertBefore(title, full_post.firstChild)
-
-	overlay.onclick = () => {
-		toggleOverlay()
-
-		div.appendChild(title)
-		div.appendChild(content)
-
-		div.style.display = ""
-	}
+	})
 }
 
 function createPost(post) {
 	const div = document.createElement("div")
 	div.name = post.name
 	div.className = "ribbon-post"
-	div.permalink = post.permalink
 
 	const title = document.createElement("div")
 	title.className = "post-title"
 
-	if (post.flair) {
-		const flair = createFlair(post.flair.text, post.flair.fg, post.flair.bg)
-		title.appendChild(flair)
-	}
+	if (post.flair)
+		title.appendChild( createFlair(post.flair.text, post.flair.fg, post.flair.bg) )
 
 	title.innerHTML += post.title
 
@@ -152,27 +210,117 @@ function createPost(post) {
 
 	div.appendChild(content)
 
-	div.onclick = () => { openPost(div) }
+	div.onclick = (e) => {
+		div.style.display = "none"
+
+		openPost(title, content, post.permalink).then(() => {
+			div.appendChild(title)
+			div.appendChild(content)
+
+			div.style.display = ""
+		})
+	}
 
 	return div
+}
+
+// FIXME: Mom's spaghetti
+function createContent(post) {
+	const content = document.createElement("div")
+	content.className = "post-content"
+
+	if (post.hint === "image") {
+
+		// GIF
+		if (post.preview.variants.mp4) {
+
+			let url = post.preview.variants.mp4.source.url
+
+			if (post.preview.variants.mp4.resolutions.length > 0)
+				url = post.preview.variants.mp4.resolutions.last_or(3).url
+
+			content.appendChild( createVideo(url, null, null, "video/mp4") )
+
+		} else {
+
+			let previewURL = post.preview.source.url
+			let placeholderURL = post.thumbnail.url
+
+			// TODO: Add config option - placeholder resolution
+			if (post.preview.resolutions.length > 0) {
+				previewURL = post.preview.resolutions.last_or(3).url
+				placeholderURL = post.preview.resolutions[0].url
+			}
+
+			content.appendChild( createImg(previewURL, placeholderURL, post.preview.source.url) )
+		}
+
+		content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
+
+	} else if (post.hint === "hosted:video") {
+
+		let poster = post.preview.source.url
+
+		if (post.preview.resolutions.length > 0)
+			poster = post.preview.resolutions.last_or(3).url
+
+		content.appendChild( createVideo(post.media.reddit_video.hls_url, poster, null, "application/vnd.apple.mpegurl", true) )
+
+		content.style.height = scale(post.media.reddit_video.height, post.media.reddit_video.width, 400) + "px"
+
+	} else if (post.hint === "rich:video") {
+
+		if (post.media.type === "gfycat.com") {
+			const gif = gfycat(post.media.oembed.thumbnail_url)
+			content.appendChild( createVideo(gif.sd + ".mp4", null, gif.hd + ".mp4", "video/mp4") )
+			content.style.height = scale(post.media.oembed.thumbnail_height, post.media.oembed.thumbnail_width, 400) + "px"
+		} else {
+			content.innerHTML += post.media.oembed.html
+			content.firstChild.loading = "lazy"
+			content.style.height = scale(post.media.oembed.height, post.media.oembed.width, 400) + "px"
+		}
+
+	} else if (post.hint === "link") { // Reposts
+
+		let previewURL = post.preview.source.url
+		let placeholderURL = post.thumbnail.url
+
+		if (post.preview.resolutions.length > 0) {
+			previewURL = post.preview.resolutions.last_or(3).url
+			placeholderURL = post.preview.resolutions[0].url
+		}
+
+		content.appendChild( createLink(post.url, createImg(previewURL, placeholderURL)) )
+		content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
+
+	} else if (post.html != null) {
+		const textNode = document.createElement("div")
+		content.innerHTML += post.html
+	} else if (post.url.endsWith(".jpg")) {
+		content.appendChild( createImg(post.url) )
+	}
+
+	return content
 }
 
 function createComment(data) {
 	const comment = document.createElement("div")
 	comment.className = "comment"
 
-	const author = document.createElement("div")
+	const author = document.createElement("a")
+	author.href = "https://reddit.com/user/" + data.author
 	author.className = "comment-author"
-	author.innerText = data.author + "  •  " + ago(new Date(data.created_utc * 1000))
+	author.innerText = data.author
+
+	const title = document.createElement("div")
+	title.appendChild(author)
+	title.innerHTML += "  •  " + ago(new Date(data.created_utc * 1000))
 
 	const content = document.createElement("div")
 	content.className = "comment-content"
 	content.innerHTML = data.body_html
 
-	// const permalink = document.createElement("a")
-	// permalink.href = comment.permalink
-
-	comment.appendChild(author)
+	comment.appendChild(title)
 	comment.appendChild(content)
 
 	return comment
@@ -182,106 +330,122 @@ function createFlair(text, fg, bg) {
 	const flair = document.createElement("div")
 	flair.innerText = text
 	flair.className = "flair flair-" + fg
-	flair.style.backgroundColor = bg
+
+	if (bg) flair.style.backgroundColor = bg
 
 	return flair
 }
 
-function createContent(post) {
-	const content = document.createElement("div")
-	content.className = "post-content"
-
-	if (post.hint === "image") {
-		const previewURL = (post.preview.resolutions.length >= 4) ? post.preview.resolutions[3].url : post.preview.resolutions[post.preview.resolutions.length - 1].url
-		const placeholderURL = post.preview.resolutions[0].url
-
-		const img = createImg(previewURL, placeholderURL)
-		img.setAttribute("source", post.preview.source.url)
-		content.appendChild(img)
-
-		const height = scale(post.preview.source.height, post.preview.source.width, 400)
-		content.style.height = height + "px"
-
-	} else if (post.hint === "hosted:video") {
-		const video = createVideo(post.media.reddit_video.hls_url)
-		content.appendChild(video)
-
-		const height = scale(post.media.reddit_video.height, post.media.reddit_video.width, 400)
-		content.style.height = height + "px"
-	}
-	else if (post.hint === "rich:video") {
-		content.innerHTML += post.media.oembed.html
-		content.querySelector("iframe").className = "lazyload"
-
-	} else if (post.hint === "link") {
-		// TODO: Don't scale thumbnail. Scale source or give link near image, like reddit does.
-		if (post.domain === "imgur.com") {
-			const img = createImg("", post.thumbnail.url)
-			content.appendChild(img)
-
-			const height = scale(post.thumbnail.height, post.thumbnail.width, 400)
-			content.style.height = height + "px"
-		} else {
-			const link = document.createElement("a")
-			link.href = post.url
-			content.appendChild(link)
-		}
-
-	} else if (post.html != null) {
-		const textNode = document.createElement("div")
-		content.innerHTML += post.html
-	}
-
-	return content
-}
-
-function createImg(src, placeholder) {
+function createImg(url, placeholder, source) {
 	const img = document.createElement("img")
 
+	img.dataset.src = url
 	img.src = placeholder
+	img.source = source
 	img.className = "lazyload blur-up"
-	img.setAttribute("data-src", src)
-	img.setAttribute("referrerpolicy", "no-referrer")
+	img.referrerPolicy = "no-referrer"
 
 	return img
 }
 
-function createVideo(src, preview) {
-	const video = document.createElement("video-js")
-	if (preview) {
-		video.setAttribute("poster", preview)
+function createVideo(url, poster, source, type, controls) {
+	const video = document.createElement("video")
+	video.source = source
+
+	if (poster) {
+		video.className = "lazyload"
+		video.dataset.poster = poster
+		video.preload = "none"
 	}
 
-	const source = document.createElement("source")
-	source.src = src
+	if (type === "application/vnd.apple.mpegurl") {
+		video.addEventListener("play", () => {
+			if (!hls) hls = new Hls()
 
-	video.appendChild(source)
+			if (hls.media === video) return
 
-	videojs(video, { controls: true })
+			if (hls.media) {
+				hls.media.pause()
+				hls.media.src = null
+				hls.destroy()
+			}
+
+			hls = new Hls()
+			hls.attachMedia(video)
+			hls.loadSource(url)
+			hls.media.play()
+		})
+	} else {
+		const sourceElement = document.createElement("source")
+		sourceElement.src = url
+		sourceElement.type = type
+
+		video.appendChild(sourceElement)
+	}
+
+	// TODO: Chromium blocks controls if no src where provided
+	if (controls) {
+		video.controls = true
+
+		// const controls = document.createElement("div")
+
+		// const playpause = document.createElement("div")
+		// playpause.addEventListener('click', () => {
+		// if (video.paused || video.ended) {
+		// video.play()
+		// } else {
+		// video.pause()
+		// }
+		// });
+
+		// const progress = document.createElement("progress")
+		// video.addEventListener('loadedmetadata', () => {
+		// progress.setAttribute('max', video.duration);
+		// });
+
+		// const volume = document.createElement("div")
+		// const fullscreen = document.createElement("div")
+
+	} else {
+		video.loop = video.autoplay = true
+	}
+
+	// video.addEventListener("play", () => {})
+	// video.addEventListener("pause", () => {})
+
 
 	return video
 }
 
+function createLink(url, preview) {
+	const a = document.createElement("a")
+	a.className = "external-link"
+	a.href = url
+	a.target = "_blank"
+	a.rel = "noreferrer noopener"
+	a.onclick = (e) => { e.stopPropagation() }
+
+	const icon = document.createElement("span")
+	icon.innerText = ""
+	icon.className = "external-link-icon"
+
+	a.appendChild(preview)
+	a.appendChild(icon)
+
+	return a
+}
+
+// Imgur Albums
 function createAlbum() {
-	const album = document.createElement("div")
+	const album  = document.createElement("div")
 	const images = document.createElement("div")
-	const left = document.createElement("div")
-	const right = document.createElement("div")
+	const left   = document.createElement("div")
+	const right  = document.createElement("div")
 
-	album.className = "album"
+	album.className  = "album"
 	images.className = "album-images"
-	left.className = "album-control album-left"
-	right.className = "album-control album-right"
-
-	album.addImage = (url) => {
-		const img = createImg(url)
-		images.appendChild(img)
-	}
-
-	album.addVideo = (url) => {
-		const video = createVideo(url)
-		images.appendChild(video)
-	}
+	left.className   = "album-control album-left"
+	right.className  = "album-control album-right"
 
 	let i = 0
 
@@ -312,69 +476,9 @@ function createAlbum() {
 	return album
 }
 
-// FIXME:
-function getDeviantart(url) {
-	const backendURL = "https://backend.deviantart.com/oembed?format=jsonp&callback=?&url="
-	const img = createImg()
-
-	fetchJsonp(backendURL + url)
-		.then(resp => resp.json())
-		.then(json => {
-			const height = scale(json.height, json.width, 400)
-			img.src = json.thumbnail_url
-			img.setAttribute("data-src", json.url)
-			img.setAttribute("height", height + "px")
-
-			img.className = "lazyload blur-up"
-			brick.pack()
-		})
-
-	return img
-}
-
-// FIXME:
-function getImgur(url) {
-	// TODO: ClientID is incorrect and never actually worked
-	// const clientID = "1db5a663e63400b"
-	// const options = {
-	// 	headers: {
-	// 		Authorization: `Client-ID ${clientID}`
-	// 	}
-	// }
-
-	const requestURL = url.replace("imgur.com", "api.imgur.com/3").replace("/a/", "/album/")
-
-	const elem = document.createElement("div")
-
-	const promise = fetch(requestURL)
-		.then(resp => resp.json())
-		.then(json => {
-			if (json.data.images.length === 1) {
-				const img = createImg(json.data.images[0].link)
-				img.style.width = "100%"
-				elem.appendChild(img)
-				return
-			}
-
-			const album = createAlbum()
-
-			json.data.images.forEach(image => {
-				if (image.type.includes("image")) {
-					album.addImage(image.link)
-				} else if (image.type.includes("video")) {
-					album.addVideo(image.link)
-				}
-			})
-
-			elem.appendChild(album)
-		})
-
-	return elem
-}
-
 function ago(date) {
-	const suffix = (v) => {
-		if (v > 1) {
+	const suffix = (n) => {
+		if (n > 1) {
 			return "s ago"
 		}
 
@@ -382,39 +486,24 @@ function ago(date) {
 	}
 
 	let n = Math.floor((new Date() - date) / 1000)
-	let unit = " monkeys"
+	const result = (n, unit) => n + unit + suffix(n)
 
-	while (true) {
-		if (n < 60) {
-			unit = " second"
-			break
-		}
+	if (n < 60) return result(n, " second")
 
-		n = Math.floor(n / 60)
-		if (n < 60) {
-			unit = " minute"
-			break
-		}
+	n = Math.floor(n / 60)
+	if (n < 60) return result(n, " minute")
 
-		n = Math.floor(n / 60)
-		if (n < 24) {
-			unit = " hour"
-			break
-		}
+	n = Math.floor(n / 60)
+	if (n < 24) return result(n, " hour")
 
-		n = Math.floor(n / 24)
-		if (n < 365) {
-			unit = " day"
-			break
-		}
+	n = Math.floor(n / 24)
+	if (n < 365) return result(n, " day")
 
-		n = Math.floor(n / 365)
-		unit = " year"
+	return result(Math.floor(n / 365), " year")
+}
 
-		break
-	}
-
-	return n + unit + suffix(n)
+function loadConfig(path) {
+	return fetch(path).then(resp => resp.json())
 }
 
 function scale(a, b, c) {
@@ -422,19 +511,18 @@ function scale(a, b, c) {
 }
 
 function empty(elem) {
-	while (elem.firstChild) {
+	while (elem.firstChild)
 		elem.removeChild(elem.firstChild)
-	}
 }
 
-function toggleOverlay() {
-	if (overlay.style.display === "none") {
-		overlay.style.display   = ""
-		full_post.style.display = ""
-		document.body.style.overflow = "none"
-	} else {
-		overlay.style.display   = "none"
-		full_post.style.display = "none"
-		document.body.style.overflow  = ""
-	}
+function openOverlay() {
+	overlay.style.display   = ""
+	fullPost.style.display = ""
+	document.body.style.overflow = "hidden"
+}
+
+function closeOverlay() {
+	overlay.style.display   = "none"
+	fullPost.style.display = "none"
+	document.body.style.overflow  = ""
 }
