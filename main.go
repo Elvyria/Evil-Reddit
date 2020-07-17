@@ -8,7 +8,7 @@ import (
 func main() {
 	e := echo.New()
 	e.Static("/", "web")
-	e.GET("/r/:subreddit", getSubreddit)
+	e.GET("/r/*", getSubreddit)
 	e.Logger.Fatal(e.Start(":3006"))
 }
 
