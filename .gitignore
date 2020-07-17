@@ -2,6 +2,5 @@
 /server
 web/assets/background.png
 web/js/*.js
-web/node_modules
-web/package-lock.json
-web/pnpm-lock.yaml
+web/.pnp
+web/.pnp.js

@@ -1,13 +1,21 @@
 const path = require('path');
 
 module.exports = {
-	entry: {
-		reddit: './js/src/reddit.js',
-		redditapi: './js/src/reddit.api.js'
-	},
+	entry: './js/src/reddit.js',
 	mode: 'development',
+	module: {
+		rules: [{
+			test: /\.js$/,
+			use: {
+				loader: 'babel-loader',
+				options: {
+					presets: ['@babel/preset-env']
+				}
+			}
+		}]
+	},
 	output: {
-		filename: '[name].bundle.js',
+		filename: 'reddit.js',
 		path: path.resolve(__dirname, 'js')
 	}
 };
