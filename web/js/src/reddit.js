@@ -266,7 +266,8 @@ function createContent(post) {
 
 		content.appendChild( createVideo(post.media.reddit_video.hls_url, poster, null, "application/vnd.apple.mpegurl", true) )
 
-		content.style.height = scale(post.media.reddit_video.height, post.media.reddit_video.width, 400) + "px"
+		// For some reason width and height where swapped in media, so here's workaround
+		content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
 
 	} else if (post.hint === "rich:video") {
 
