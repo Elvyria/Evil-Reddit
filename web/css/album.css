@@ -4,15 +4,15 @@
 	position: relative;
 }
 
-.album-images {
+.album-collection {
 	display: flex;
 	position: relative;
 	right: 0;
 	transition: right 0.4s;
 }
 
-.album-images > img {
-	width: 400px;
+.album-collection > img {
+	width: 100%;
 }
 
 .album-control {

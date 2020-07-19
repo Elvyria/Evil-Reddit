@@ -298,6 +298,12 @@ function createContent(post) {
 		content.innerHTML += post.html
 	} else if (post.url.endsWith(".jpg")) {
 		content.appendChild( createImg(post.url) )
+	} else if (post.gallery) {
+		const images = post.gallery.map(img => createImg(img.p.last_or(3).u, img.p[0].u, img.s.u))
+		const album = createAlbum(images)
+		
+		content.appendChild(album)
+		content.style.height = scale(post.gallery[0].s.y, post.gallery[0].s.x, 400) + "px"
 	}
 
 	return content
@@ -435,41 +441,46 @@ function createLink(url, preview) {
 	return a
 }
 
-// Imgur Albums
-function createAlbum() {
+function createAlbum(images) {
 	const album  = document.createElement("div")
-	const images = document.createElement("div")
+	const collection = document.createElement("div")
 	const left   = document.createElement("div")
 	const right  = document.createElement("div")
 
-	album.className  = "album"
-	images.className = "album-images"
-	left.className   = "album-control album-left"
-	right.className  = "album-control album-right"
+	album.className      = "album"
+	collection.className = "album-collection"
+	left.className       = "album-control album-left"
+	right.className      = "album-control album-right"
+
+	images.forEach(img => collection.appendChild(img))
 
 	let i = 0
 
-	left.onclick = () => {
+	left.onclick = (e) => {
 		if (i > 0) {
-			images.style.right = images.children[--i].offsetLeft + "px"
+			collection.style.right = --i * 100 + "%"
 			right.style.display = "block"
 			if (i === 0) {
 				left.style.display = "none"
 			}
 		}
+
+		e.stopPropagation()
 	}
 
-	right.onclick = function () {
-		if (i + 1 < images.children.length) {
-			images.style.right = images.children[++i].offsetLeft + "px"
+	right.onclick = (e) => {
+		if (i + 1 < collection.children.length) {
+			collection.style.right = ++i * 100 + "%"
 			left.style.display = "block"
-			if (i === images.children.length - 1) {
+			if (i === collection.children.length - 1) {
 				right.style.display = "none"
 			}
 		}
+
+		e.stopPropagation()
 	}
 
-	album.appendChild(images)
+	album.appendChild(collection)
 	album.appendChild(left)
 	album.appendChild(right)
 

@@ -47,6 +47,7 @@ reddit.post = (data) => {
 		hint:      data.post_hint,
 		html:      data.selftext_html,
 		preview:   data.preview ? data.preview.images[0] : undefined,
+		gallery:   data.is_gallery ? Object.values(data.media_metadata) : undefined,
 		media:     data.media,
 		url:       data.url,
 		thumbnail: {
