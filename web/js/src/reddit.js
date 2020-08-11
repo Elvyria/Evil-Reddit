@@ -448,13 +448,16 @@ function createLink(url, preview) {
 function createAlbum(images) {
 	const album  = document.createElement("div")
 	const collection = document.createElement("div")
-	const left   = document.createElement("div")
-	const right  = document.createElement("div")
+	const left = wrap(document.createElement("div"))
+	const right = wrap(document.createElement("div"))
 
-	album.className      = "album"
+	album.className = "album"
 	collection.className = "album-collection"
-	left.className       = "album-control album-left"
-	right.className      = "album-control album-right"
+	left.className = "album-control-left"
+	left.firstChild.className = "album-arrow album-left"
+	left.style.display = "none"
+	right.className = "album-control-right"
+	right.firstChild.className = "album-arrow album-right"
 
 	images.forEach(img => collection.appendChild(img))
 
@@ -463,7 +466,7 @@ function createAlbum(images) {
 	left.onclick = (e) => {
 		if (i > 0) {
 			collection.style.right = --i * 100 + "%"
-			right.style.display = "block"
+			right.style.display = ""
 			if (i === 0) {
 				left.style.display = "none"
 			}
@@ -475,7 +478,7 @@ function createAlbum(images) {
 	right.onclick = (e) => {
 		if (i + 1 < collection.children.length) {
 			collection.style.right = ++i * 100 + "%"
-			left.style.display = "block"
+			left.style.display = ""
 			if (i === collection.children.length - 1) {
 				right.style.display = "none"
 			}
@@ -523,6 +526,12 @@ function loadConfig(path) {
 
 function scale(a, b, c) {
 	return Math.ceil(c * (a / b))
+}
+
+function wrap(e) {
+	const div = document.createElement("div")
+	div.appendChild(e)
+	return div
 }
 
 function empty(elem) {

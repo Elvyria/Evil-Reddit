@@ -15,7 +15,21 @@
 	width: 100%;
 }
 
-.album-control {
+.album-control-left {
+	position: absolute;
+	height: 100%;
+	width: 50px;
+	left: 0;
+}
+
+.album-control-right {
+	position: absolute;
+	height: 100%;
+	width: 50px;
+	right: 0;
+}
+
+.album-arrow {
 	position: absolute;
 	width: 10px;
 	height: 10px;
@@ -34,6 +48,5 @@
 
 .album-left {
 	left: 15px;
-	display: none;
 	transform: rotate(45deg);
 }
