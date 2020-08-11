@@ -277,7 +277,10 @@ function createContent(post) {
 			content.style.height = scale(post.media.oembed.thumbnail_height, post.media.oembed.thumbnail_width, 400) + "px"
 		} else {
 			content.innerHTML += post.media.oembed.html
-			content.firstChild.loading = "lazy"
+			content.firstChild.dataset.src = content.firstChild.src
+			content.firstChild.src = ""
+			content.firstChild.style.cssText = ""
+			content.firstChild.className = "lazyload"
 			content.style.height = scale(post.media.oembed.height, post.media.oembed.width, 400) + "px"
 		}
 
