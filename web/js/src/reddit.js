@@ -25,10 +25,17 @@ function main(config) {
 	let isLoading = true
 	let end = false
 
+	const sizes = [
+		{ columns: 1, gutter: 10 },
+		{ mq: "800px", columns: 2, gutter: 10 },
+		{ mq: "1280px", columns: 3, gutter: 10 },
+		{ mq: "1920px", columns: 4, gutter: 10 }
+	]
+
 	const brick = Bricks({
 		container: ribbon,
 		packed: 'data-packed',
-		sizes: [{ columns: config.columns, gutter: config.gutter }],
+		sizes: sizes,
 		position: false
 	}).resize(true)
 
@@ -305,7 +312,7 @@ function createContent(post) {
 	} else if (post.gallery) {
 		const images = post.gallery.map(img => createImg(img.p.last_or(3).u, img.p[0].u, img.s.u))
 		const album = createAlbum(images)
-		
+
 		content.appendChild(album)
 		content.style.height = scale(post.gallery[0].s.y, post.gallery[0].s.x, 400) + "px"
 	}
