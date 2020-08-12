@@ -89,7 +89,7 @@ body {
 	color: gray;
 }
 
-#sorting div { 
+#sorting div {
 	font-family: "Nerd Font";
 	font-size: 2em;
 	text-align: center;
@@ -157,7 +157,7 @@ body {
 .post-content {
 	width: 100%;
 	margin: 8px auto 0 auto;
-	overflow: hidden;
+	overflow: hidden scroll;
 }
 
 .post-content > * {
@@ -243,10 +243,6 @@ body {
 	flex: 1 0;
 	width: 67%;
 	margin: 8px 0 0 0;
-}
-
-#full-post .md {
-	overflow-y: scroll
 }
 
 #comments {

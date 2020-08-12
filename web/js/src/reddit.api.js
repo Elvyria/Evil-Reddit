@@ -19,7 +19,7 @@ reddit.requestPost = (permalink, sort = reddit.sortMethods.comments[0]) => {
 }
 
 reddit.requestAbout = (subreddit) => {
-	const url = `https://www.reddit.com/r/${subreddit}/about.json`
+	const url = `https://www.reddit.com/r/${subreddit}/about.json?raw_json=1`
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.data)

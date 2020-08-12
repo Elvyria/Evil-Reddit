@@ -1,8 +1,7 @@
 import "./array.js"
-import { gfycat } from "./external.js"
+import { gfycat, redgifs } from "./external.js"
 import { reddit } from "./reddit.api.js"
 
-import "lazysizes"
 import Bricks from "bricks.js"
 import Hls from "hls.js"
 
@@ -18,6 +17,8 @@ const fullPost = document.getElementById("full-post")
 const comments = document.getElementById("comments")
 
 let hls
+
+const observer = new IntersectionObserver(lazyload, { rootMargin: '100px' })
 
 loadConfig("/config.json").then(main)
 
@@ -42,23 +43,29 @@ function main(config) {
 	//TODO: Rename me
 	const options = parseUrl(new URL(window.location.href))
 
-	//TODO: Move under non anonymous function
-	window.addEventListener("scroll", () => {
+	const requestPosts = (after) => {
+		isLoading = true
+
+		reddit.requestPosts(options.subreddit, options.sorting, after).then(posts => {
+			end = isLoading = posts.length === 0
+
+			if (end)
+				return
+
+			ribbon.addPosts(posts)
+			spinner.style.display = "none"
+			brick.pack()
+			isLoading = false
+		})
+	}
+
+	const loadOnScroll = (event) => {
 		if (!isLoading && !end && ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000)) {
-			isLoading = true
-
-			reddit.requestPosts(options.subreddit, options.sorting, ribbon.lastChild.name).then(posts => {
-				end = posts.length === 0
-
-				if (!end) {
-					ribbon.addPosts(posts)
-					brick.update()
-				}
-
-				isLoading = false
-			})
+			requestPosts(ribbon.lastChild.name ?? "")
 		}
-	})
+	}
+
+	window.addEventListener("scroll", loadOnScroll)
 
 	// Sort buttons
 	Array.from(document.getElementById("sorting").children).forEach((button, i) => {
@@ -71,31 +78,12 @@ function main(config) {
 			isLoading = true
 			end = false
 
-			reddit.requestPosts(options.subreddit, options.sorting).then(data => {
-				ribbon.addPosts(data)
-				spinner.style.display = "none"
-				brick.pack()
-				isLoading = false
-			})
+			requestPosts()
 		}
 	})
 
 	// TODO: History states
 	// window.addEventListener("popstate", (e) => {})
-
-	// Lazyload video posters
-	document.addEventListener("lazybeforeunveil", e => {
-		if (e.target.dataset.poster)
-			e.target.poster = e.target.dataset.poster
-	});
-
-	// Delete fields after loading
-	document.addEventListener("lazyloaded", e => {
-		if (e.target.dataset.src)
-			delete e.target.dataset.src
-		if (e.target.dataset.poster)
-			delete e.target.dataset.poster
-	})
 
 	searchInput.addEventListener("keypress", e => {
 		if (e.keyCode === 13) {
@@ -111,21 +99,19 @@ function main(config) {
 		favicon.href = data.icon_img
 	})
 
-	reddit.requestPosts(options.subreddit, options.sorting).then(data => {
-		ribbon.addPosts(data)
-		spinner.style.display = "none"
-		brick.pack()
-		isLoading = false
-	})
+	requestPosts()
 }
 
-// TODO:
 ribbon.addPosts = (data) => {
+	const frag = document.createDocumentFragment()
+
 	data.forEach(child => {
 		const post = reddit.post(child.data)
 		const div = createPost(post)
-		ribbon.appendChild(div)
+		frag.appendChild(div)
 	})
+
+	ribbon.appendChild(frag)
 }
 
 function parseUrl(url) {
@@ -162,16 +148,25 @@ function search(subreddit, query) {
 
 function openPost(title, content, permalink) {
 	openOverlay()
-	empty(comments)
 
-	// TODO: Replies
-	reddit.requestPost(permalink).then(json => {
-		json[1].data.children.forEach((child, i) => {
-			const comment = createComment(child.data)
-			comments.appendChild(comment)
-			setTimeout(() => comment.style.opacity = 1, 15 * i);
+	if (comments.loaded !== permalink) {
+		empty(comments)
+
+		// TODO: Replies
+		reddit.requestPost(permalink).then(json => {
+			const reveal = (comment) => { comment.style.opacity = 1 }
+			const frag = document.createDocumentFragment()
+
+			json[1].data.children.forEach((child, i) => {
+				const comment = createComment(child.data)
+				frag.appendChild(comment)
+				setTimeout(reveal, 15 * i, comment);
+			})
+
+			comments.appendChild(frag)
+			comments.loaded = permalink
 		})
-	})
+	}
 
 	fullPost.insertBefore(content, fullPost.firstChild)
 	fullPost.insertBefore(title, fullPost.firstChild)
@@ -183,15 +178,16 @@ function openPost(title, content, permalink) {
 		delete media.source
 	}
 
-	// TODO: History states
-	// history.pushState(null, title.textContent, permalink)
+	const subTitle = document.title
+	document.title = title.textContent
+	history.pushState(null, title.textContent, permalink)
 
 	return new Promise((resolve, reject) => {
 		overlay.onclick = () => {
 			closeOverlay()
 
-			// TODO: History states
-			// history.pushState(null, title.textContent, window.location.pathname.substring(0, window.location.pathname.indexOf("comments") - 1))
+			document.title = subTitle
+			history.pushState(null, subTitle, window.location.pathname.substring(0, window.location.pathname.indexOf("comments") - 1))
 
 			resolve()
 		}
@@ -246,7 +242,9 @@ function createContent(post) {
 			if (post.preview.variants.mp4.resolutions.length > 0)
 				url = post.preview.variants.mp4.resolutions.last_or(3).url
 
-			content.appendChild( createVideo(url, null, null, "video/mp4") )
+			content.appendChild(
+				createVideo({ sd: url }, null, "video/mp4")
+			)
 
 		} else {
 
@@ -259,7 +257,9 @@ function createContent(post) {
 				placeholderURL = post.preview.resolutions[0].url
 			}
 
-			content.appendChild( createImg(previewURL, placeholderURL, post.preview.source.url) )
+			content.appendChild(
+				createImg(previewURL, placeholderURL, post.preview.source.url)
+			)
 		}
 
 		content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
@@ -271,7 +271,9 @@ function createContent(post) {
 		if (post.preview.resolutions.length > 0)
 			poster = post.preview.resolutions.last_or(3).url
 
-		content.appendChild( createVideo(post.media.reddit_video.hls_url, poster, null, "application/vnd.apple.mpegurl", true) )
+		content.appendChild(
+			createVideo({ hls: post.media.reddit_video.hls_url }, poster, "application/vnd.apple.mpegurl", true)
+		)
 
 		// For some reason width and height where swapped in media, so here's workaround
 		content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
@@ -280,15 +282,29 @@ function createContent(post) {
 
 		if (post.media.type === "gfycat.com") {
 			const gif = gfycat(post.media.oembed.thumbnail_url)
-			content.appendChild( createVideo(gif.sd + ".mp4", null, gif.hd + ".mp4", "video/mp4") )
+			content.appendChild(
+				createVideo(gif, null, "video/mp4")
+			)
 			content.style.height = scale(post.media.oembed.thumbnail_height, post.media.oembed.thumbnail_width, 400) + "px"
+		} else if (post.media.type === "redgifs.com") {
+			const video = createVideo(null, post.preview.source.url, "video/mp4")
+			video.addEventListener("enterView", () => {
+				redgifs(post.url).then(urls => {
+					video.addSource(urls.sd, "video/mp4")
+					video.addSource(urls.hd, "video/mp4")
+					video.load()
+				})
+			}, { once: true })
+			content.appendChild(video)
+			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
 		} else {
 			content.innerHTML += post.media.oembed.html
 			content.firstChild.dataset.src = content.firstChild.src
 			content.firstChild.src = ""
 			content.firstChild.style.cssText = ""
-			content.firstChild.className = "lazyload"
+
 			content.style.height = scale(post.media.oembed.height, post.media.oembed.width, 400) + "px"
+			observer.observe(content.firstChild)
 		}
 
 	} else if (post.hint === "link") { // Reposts
@@ -310,7 +326,7 @@ function createContent(post) {
 	} else if (post.url.endsWith(".jpg")) {
 		content.appendChild( createImg(post.url) )
 	} else if (post.gallery) {
-		const images = post.gallery.map(img => createImg(img.p.last_or(3).u, img.p[0].u, img.s.u))
+		const images = post.gallery.map(img => wrap(createImg(img.p.last_or(3).u, img.p[0].u, img.s.u), "li"))
 		const album = createAlbum(images)
 
 		content.appendChild(album)
@@ -353,52 +369,53 @@ function createFlair(text, fg, bg) {
 	return flair
 }
 
+function clearBlur(e) {
+	e.target.classList.remove("blur-up")
+}
+
 function createImg(url, placeholder, source) {
 	const img = document.createElement("img")
 
 	img.dataset.src = url
 	img.src = placeholder
 	img.source = source
-	img.className = "lazyload blur-up"
+	img.className = "blur-up"
 	img.referrerPolicy = "no-referrer"
+
+	img.addEventListener("enterView", clearBlur, { once: true })
+
+	observer.observe(img)
 
 	return img
 }
 
-function createVideo(url, poster, source, type, controls) {
+function initHLS(event) {
+	if (!hls) hls = new Hls()
+
+	if (hls.media) {
+		hls.media.pause()
+		hls.media.src = null
+		hls.destroy()
+	}
+
+	hls = new Hls()
+	const url = event.target.src
+	hls.attachMedia(event.target)
+	hls.loadSource(url)
+	hls.media.play()
+}
+
+function createVideo(urls, poster, type, controls) {
 	const video = document.createElement("video")
-	video.source = source
+	video.addSource = addSource
 
 	if (poster) {
-		video.className = "lazyload"
 		video.dataset.poster = poster
 		video.preload = "none"
+
+		observer.observe(video)
 	}
 
-	if (type === "application/vnd.apple.mpegurl") {
-		video.addEventListener("play", () => {
-			if (!hls) hls = new Hls()
-
-			if (hls.media === video) return
-
-			if (hls.media) {
-				hls.media.pause()
-				hls.media.src = null
-				hls.destroy()
-			}
-
-			hls = new Hls()
-			hls.attachMedia(video)
-			hls.loadSource(url)
-			hls.media.play()
-		})
-	} else {
-		const sourceElement = document.createElement("source")
-		sourceElement.src = url
-		sourceElement.type = type
-
-		video.appendChild(sourceElement)
-	}
 
 	// TODO: Chromium blocks controls if no src where provided
 	if (controls) {
@@ -424,14 +441,31 @@ function createVideo(url, poster, source, type, controls) {
 		// const fullscreen = document.createElement("div")
 
 	} else {
-		video.loop = video.autoplay = true
+		video.loop = video.autoplay =  true
 	}
 
-	// video.addEventListener("play", () => {})
+	video.addEventListener("play", onPlay)
 	// video.addEventListener("pause", () => {})
 
+	if (!urls) return video
+
+	if (urls.hls) {
+		video.src = urls.hls
+		video.addEventListener("play", initHLS, { once: true })
+	}
+
+	if (urls.sd)
+		video.addSource(urls.sd, type)
+
+	if (urls.hd)
+		video.addSource(urls.hd, type)
 
 	return video
+}
+
+function onPlay(e) {
+	const video = e.target
+	observer.observe(video)
 }
 
 function createLink(url, preview) {
@@ -452,9 +486,15 @@ function createLink(url, preview) {
 	return a
 }
 
+function centerInList(list, center) {
+	for (let i = 0; i < list.length; i++) {
+		list[i].style.left = (i - center) * 100 + "%"
+	}
+}
+
 function createAlbum(images) {
 	const album  = document.createElement("div")
-	const collection = document.createElement("div")
+	const collection = document.createElement("ul")
 	const left = wrap(document.createElement("div"))
 	const right = wrap(document.createElement("div"))
 
@@ -468,27 +508,27 @@ function createAlbum(images) {
 
 	images.forEach(img => collection.appendChild(img))
 
-	let i = 0
+	let current = 0
+
+	centerInList(collection.children, current)
 
 	left.onclick = (e) => {
-		if (i > 0) {
-			collection.style.right = --i * 100 + "%"
+		if (current > 0) {
+			centerInList(collection.children, --current)
 			right.style.display = ""
-			if (i === 0) {
+			if (current === 0)
 				left.style.display = "none"
-			}
 		}
 
 		e.stopPropagation()
 	}
 
 	right.onclick = (e) => {
-		if (i + 1 < collection.children.length) {
-			collection.style.right = ++i * 100 + "%"
+		if (current + 1 < collection.children.length) {
+			centerInList(collection.children, ++current)
 			left.style.display = ""
-			if (i === collection.children.length - 1) {
+			if (current === collection.children.length - 1)
 				right.style.display = "none"
-			}
 		}
 
 		e.stopPropagation()
@@ -499,6 +539,30 @@ function createAlbum(images) {
 	album.appendChild(right)
 
 	return album
+}
+
+const enterView = new Event("enterView")
+
+function lazyload(entries, observer) {
+	entries.forEach(entry => {
+		const el = entry.target
+
+		if (entry.isIntersecting) {
+			for (const k in el.dataset) {
+				el[k] = el.dataset[k]
+				delete el.dataset[k]
+			}
+
+			el.dispatchEvent(enterView)
+
+			if (!el.paused)
+				observer.unobserve(entry.target)
+		} else {
+			if (el.tagName === "VIDEO")
+				el.pause()
+		}
+
+	})
 }
 
 function ago(date) {
@@ -535,15 +599,22 @@ function scale(a, b, c) {
 	return Math.ceil(c * (a / b))
 }
 
-function wrap(e) {
-	const div = document.createElement("div")
-	div.appendChild(e)
-	return div
+function wrap(e, tag = "div") {
+	const wrapper = document.createElement(tag)
+	wrapper.appendChild(e)
+	return wrapper
 }
 
 function empty(elem) {
 	while (elem.firstChild)
 		elem.removeChild(elem.firstChild)
+}
+
+function addSource(src, type) {
+	const source = document.createElement("source")
+	source.src = src
+	source.type = type
+	this.appendChild(source)
 }
 
 function openOverlay() {
