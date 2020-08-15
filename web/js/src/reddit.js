@@ -18,7 +18,9 @@ const comments = document.getElementById("comments")
 
 let hls
 
-const observer = new IntersectionObserver(lazyload, { rootMargin: '100px' })
+const observer = new IntersectionObserver(observe, { rootMargin: '200px' })
+
+const once = { once: true }
 
 loadConfig("/config.json").then(main)
 
@@ -258,7 +260,7 @@ function createContent(post) {
 			}
 
 			content.appendChild(
-				createImg(previewURL, placeholderURL, post.preview.source.url)
+				createImg(previewURL, null, post.preview.source.url)
 			)
 		}
 
@@ -294,7 +296,7 @@ function createContent(post) {
 					video.addSource(urls.hd, "video/mp4")
 					video.load()
 				})
-			}, { once: true })
+			}, once)
 			content.appendChild(video)
 			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
 		} else {
@@ -369,20 +371,24 @@ function createFlair(text, fg, bg) {
 	return flair
 }
 
-function clearBlur(e) {
-	e.target.classList.remove("blur-up")
-}
-
 function createImg(url, placeholder, source) {
 	const img = document.createElement("img")
 
-	img.dataset.src = url
-	img.src = placeholder
-	img.source = source
-	img.className = "blur-up"
-	img.referrerPolicy = "no-referrer"
+	if (placeholder) {
+		img.src = placeholder
+		img.className = "blur-up"
+	}
 
-	img.addEventListener("enterView", clearBlur, { once: true })
+	img.dataset.src = url
+	img.source = source
+	img.referrerPolicy = "no-referrer"
+	img.observe = true
+
+	img.addEventListener("enterView", (e) => {
+		lazyload(e.target, "src")
+		e.target.classList.remove("blur-up")
+		delete img.observe
+	}, once)
 
 	observer.observe(img)
 
@@ -412,12 +418,18 @@ function createVideo(urls, poster, type, controls) {
 	if (poster) {
 		video.dataset.poster = poster
 		video.preload = "none"
+		video.observe = true
+
+		video.addEventListener("enterView", (e) => { 
+			lazyload(e.target, "poster")
+			if (!e.target.loop)
+				e.target.observe = false
+		}, once)
 
 		observer.observe(video)
 	}
 
-
-	// TODO: Chromium blocks controls if no src where provided
+	// TODO: Custom controls
 	if (controls) {
 		video.controls = true
 
@@ -441,17 +453,19 @@ function createVideo(urls, poster, type, controls) {
 		// const fullscreen = document.createElement("div")
 
 	} else {
-		video.loop = video.autoplay =  true
+		video.loop = video.autoplay = video.muted = true
 	}
 
 	video.addEventListener("play", onPlay)
 	// video.addEventListener("pause", () => {})
 
+	video.addEventListener("exitView", video.pause, once)
+
 	if (!urls) return video
 
 	if (urls.hls) {
 		video.src = urls.hls
-		video.addEventListener("play", initHLS, { once: true })
+		video.addEventListener("play", initHLS, once)
 	}
 
 	if (urls.sd)
@@ -463,8 +477,8 @@ function createVideo(urls, poster, type, controls) {
 	return video
 }
 
-function onPlay(e) {
-	const video = e.target
+function onPlay(event) {
+	const video = event.target
 	observer.observe(video)
 }
 
@@ -542,27 +556,28 @@ function createAlbum(images) {
 }
 
 const enterView = new Event("enterView")
+const exitView = new Event("exitView")
 
-function lazyload(entries, observer) {
+function observe(entries, observer) {
 	entries.forEach(entry => {
 		const el = entry.target
 
 		if (entry.isIntersecting) {
-			for (const k in el.dataset) {
-				el[k] = el.dataset[k]
-				delete el.dataset[k]
-			}
-
 			el.dispatchEvent(enterView)
-
-			if (!el.paused)
-				observer.unobserve(entry.target)
 		} else {
-			if (el.tagName === "VIDEO")
-				el.pause()
+			el.dispatchEvent(exitView)
 		}
 
+		if (!el.observe)
+			observer.unobserve(el)
 	})
+}
+
+function lazyload(element, name) {
+	if (element.dataset[name]) {
+		element[name] = element.dataset[name]
+		delete element.dataset[name]
+	}
 }
 
 function ago(date) {
