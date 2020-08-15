@@ -56,6 +56,10 @@ body {
 	background-color: #030303;
 }
 
+body::-webkit-scrollbar {
+	width: 1em;
+}
+
 /* Hidden until redesign */
 #search {
 	display: none;
@@ -245,7 +249,7 @@ body {
 	margin: 8px 0 0 0;
 }
 
-#full-post .md {
+#full-post > .post-content > .md {
 	overflow-y: scroll;
 }
 
@@ -280,6 +284,10 @@ body {
 
 .comment-content {
 
+}
+
+.comment-content .md {
+	overflow: hidden;
 }
 
 .ribbon-post .md {
