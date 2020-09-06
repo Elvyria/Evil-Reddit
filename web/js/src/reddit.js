@@ -54,7 +54,7 @@ function main(config) {
 			if (end)
 				return
 
-			ribbon.addPosts(posts)
+			addPosts(posts)
 			spinner.style.display = "none"
 			brick.pack()
 			isLoading = false
@@ -101,15 +101,44 @@ function main(config) {
 		favicon.href = data.icon_img
 	})
 
-	requestPosts()
+	if (options.fullPost) {
+		reddit.requestPost(window.location.pathname, options.sorting).then(data => {
+			const post = reddit.post(data[0].data.children[0].data)
+
+			const div = createPost(post)
+			const title = div.getElementsByClassName("post-title")[0]
+			const content = div.getElementsByClassName("post-content")[0]
+
+			openPost(title, content, div.permalink)
+		})
+	} else {
+		requestPosts()
+	}
+
 }
 
-ribbon.addPosts = (data) => {
+function addPosts(data) {
 	const frag = document.createDocumentFragment()
 
 	data.forEach(child => {
 		const post = reddit.post(child.data)
 		const div = createPost(post)
+
+		// TODO
+		div.onclick = (e) => {
+			div.style.display = "none"
+
+			const title = div.getElementsByClassName("post-title")[0]
+			const content = div.getElementsByClassName("post-content")[0]
+
+			openPost(title, content, div.permalink).then(() => {
+				div.appendChild(title)
+				div.appendChild(content)
+
+				div.style.display = ""
+			})
+		}
+
 		frag.appendChild(div)
 	})
 
@@ -143,7 +172,7 @@ function search(subreddit, query) {
 	window.scrollTo(0,0);
 
 	return reddit.requestSearch(query, subreddit).then(posts => {
-		ribbon.addPosts(posts)
+		addPosts(posts)
 		spinner.style.display = "none"
 	})
 }
@@ -199,6 +228,7 @@ function openPost(title, content, permalink) {
 function createPost(post) {
 	const div = document.createElement("div")
 	div.name = post.name
+	div.permalink = post.permalink
 	div.className = "ribbon-post"
 
 	const title = document.createElement("div")
@@ -209,22 +239,10 @@ function createPost(post) {
 
 	title.innerHTML += post.title
 
-	div.appendChild(title)
-
 	const content = createContent(post)
 
+	div.appendChild(title)
 	div.appendChild(content)
-
-	div.onclick = (e) => {
-		div.style.display = "none"
-
-		openPost(title, content, post.permalink).then(() => {
-			div.appendChild(title)
-			div.appendChild(content)
-
-			div.style.display = ""
-		})
-	}
 
 	return div
 }
@@ -304,6 +322,8 @@ function createContent(post) {
 			content.firstChild.dataset.src = content.firstChild.src
 			content.firstChild.src = ""
 			content.firstChild.style.cssText = ""
+			content.firstChild.observe = true
+			content.firstChild.addEventListener("enterView", (e) => lazyload(e.target, "src"), once)
 
 			content.style.height = scale(post.media.oembed.height, post.media.oembed.width, 400) + "px"
 			observer.observe(content.firstChild)
@@ -323,8 +343,10 @@ function createContent(post) {
 		content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
 
 	} else if (post.html != null) {
-		const textNode = document.createElement("div")
 		content.innerHTML += post.html
+		// Remove SC_ON / SC_OFF commments
+		content.childNodes[0].remove()
+		content.childNodes[1].remove()
 	} else if (post.url.endsWith(".jpg")) {
 		content.appendChild( createImg(post.url) )
 	} else if (post.gallery) {
@@ -408,8 +430,13 @@ function initHLS(event) {
 	const url = event.target.src
 	hls.attachMedia(event.target)
 	hls.loadSource(url)
+	// hls.on(Hls.Events.MANIFEST_PARSED, maximizeQuality)
 	hls.media.play()
 }
+
+// function maximizeQuality(event, data) {
+	// hls data.levels.
+// }
 
 function createVideo(urls, poster, type, controls) {
 	const video = document.createElement("video")
@@ -420,7 +447,7 @@ function createVideo(urls, poster, type, controls) {
 		video.preload = "none"
 		video.observe = true
 
-		video.addEventListener("enterView", (e) => { 
+		video.addEventListener("enterView", (e) => {
 			lazyload(e.target, "poster")
 			if (!e.target.loop)
 				e.target.observe = false
