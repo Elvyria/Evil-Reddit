@@ -355,6 +355,8 @@ function createContent(post) {
 
 		content.appendChild(album)
 		content.style.height = scale(post.gallery[0].s.y, post.gallery[0].s.x, 400) + "px"
+	} else if (!post.url.includes(post.permalink)) {
+		content.appendChild( createLink(post.url) )
 	}
 
 	return content
@@ -517,12 +519,16 @@ function createLink(url, preview) {
 	a.rel = "noreferrer noopener"
 	a.onclick = (e) => { e.stopPropagation() }
 
-	const icon = document.createElement("span")
-	icon.innerText = ""
-	icon.className = "external-link-icon"
+	if (preview) {
+		const icon = document.createElement("span")
+		icon.innerText = ""
+		icon.className = "external-link-icon"
 
-	a.appendChild(preview)
-	a.appendChild(icon)
+		a.appendChild(preview)
+		a.appendChild(icon)
+	} else {
+		a.innerText = url
+	}
 
 	return a
 }

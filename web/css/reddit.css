@@ -328,6 +328,11 @@ body::-webkit-scrollbar {
 	margin: 8px 0px;
 }
 
-.md a {
+a {
 	color: rgb(79, 188, 255);
+}
+
+.external-link {
+	overflow: hidden;
+	white-space: nowrap;
 }
