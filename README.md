@@ -4,7 +4,7 @@
 </p>
 
 ## Overview
-Self hosted reddit viewer created to replace slow and bloated [reddit.com](https://www.reddit.com) with something faster.
+Self hosted reddit viewer created to replace slow and bloated [reddit.com](https://www.reddit.com) with something faster.  
 
 <img src="./preview.jpg">
 
