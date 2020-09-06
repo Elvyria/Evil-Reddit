@@ -38,5 +38,3 @@ If something doesn't work - lookup console messages in browser tools, it should 
   * Cross-Origin Request Blocked - Firefox ? Disable enhanced tracking protection for page (Don't disable uBlock Origin or any other adblock extension, or else iframes will eat your firstborn)
 
   * GIFs doesn't play - Allow browser to autoplay videos, all gifs are replaced with videos for performance and traffic reasons.
-
-  * Can't play videos - Chromium ? It blocks controls if element doesn't have url in src, can be bypassed with custom controls, working on it.
