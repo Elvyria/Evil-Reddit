@@ -5,6 +5,7 @@
 
 ## Overview
 Self hosted reddit viewer created to replace slow and bloated [reddit.com](https://www.reddit.com) with something faster.  
+Demo: https://evil-reddit.web.app/r/unixporn
 
 <img src="./preview.jpg">
 
