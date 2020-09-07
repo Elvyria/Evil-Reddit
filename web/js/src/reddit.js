@@ -16,6 +16,8 @@ const overlay = document.getElementById("overlay")
 const fullPost = document.getElementById("full-post")
 const comments = document.getElementById("comments")
 
+const hlsType = "application/vnd.apple.mpegurl"
+
 let hls
 
 const observer = new IntersectionObserver(observe, { rootMargin: '200px' })
@@ -292,7 +294,7 @@ function createContent(post) {
 			poster = post.preview.resolutions.last_or(3).url
 
 		content.appendChild(
-			createVideo({ hls: post.media.reddit_video.hls_url }, poster, "application/vnd.apple.mpegurl", true)
+			createVideo({ hls: post.media.reddit_video.hls_url }, poster, hlsType, true)
 		)
 
 		// For some reason width and height where swapped in media, so here's workaround
@@ -422,6 +424,8 @@ function createImg(url, placeholder, source) {
 function initHLS(event) {
 	if (!hls) hls = new Hls()
 
+	if (hls.media === event.target) return;
+
 	if (hls.media) {
 		hls.media.pause()
 		hls.media.src = null
@@ -429,11 +433,11 @@ function initHLS(event) {
 	}
 
 	hls = new Hls()
-	const url = event.target.src
+	const url = event.target.source
 	hls.attachMedia(event.target)
 	hls.loadSource(url)
-	// hls.on(Hls.Events.MANIFEST_PARSED, maximizeQuality)
 	hls.media.play()
+	// hls.on(Hls.Events.MANIFEST_PARSED, maximizeQuality)
 }
 
 // function maximizeQuality(event, data) {
@@ -486,15 +490,19 @@ function createVideo(urls, poster, type, controls) {
 	}
 
 	video.addEventListener("play", onPlay)
-	// video.addEventListener("pause", () => {})
+	video.addEventListener("pause", onPause)
 
-	video.addEventListener("exitView", video.pause, once)
+	video.addEventListener("exitView", video.pause)
 
 	if (!urls) return video
 
-	if (urls.hls) {
-		video.src = urls.hls
-		video.addEventListener("play", initHLS, once)
+	if (urls.hls && type === hlsType) {
+		if (Hls.isSupported()) {
+			video.source = urls.hls
+			video.addEventListener("play", initHLS)
+		} else if (video.canPlayType(hlsType)) {
+			video.addSource(urls.hls, hlsType)
+		}
 	}
 
 	if (urls.sd)
@@ -508,7 +516,14 @@ function createVideo(urls, poster, type, controls) {
 
 function onPlay(event) {
 	const video = event.target
+	video.observe = true;
 	observer.observe(video)
+}
+
+function onPause(event) {
+	const video = event.target
+	delete video.observe;
+	observer.unobserve(video)
 }
 
 function createLink(url, preview) {
