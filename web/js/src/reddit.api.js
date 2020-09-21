@@ -48,7 +48,7 @@ reddit.post = (data) => {
 		html:      data.selftext_html,
 		preview:   data.preview ? data.preview.images[0] : undefined,
 		gallery:   data.is_gallery ? Object.values(data.media_metadata) : undefined,
-		media:     data.media,
+		media:     data.media && data.media.reddit_video ? reddit.media(data.media) : data.media,
 		url:       data.url,
 		thumbnail: {
 			url: data.thumbnail,
@@ -60,5 +60,15 @@ reddit.post = (data) => {
 			fg: data.link_flair_text_color,
 			bg: data.link_flair_background_color,
 		},
+	}
+}
+
+reddit.media = (data) => {
+	return {
+		hls: data.reddit_video.hls_url,
+		dash: data.reddit_video.dash_url,
+		fallback: data.reddit_video.fallback_url,
+		height: data.reddit_video.height,
+		width: data.reddit_video.width,
 	}
 }

@@ -1,9 +1,10 @@
 import "./array.js"
-import { gfycat, redgifs } from "./external.js"
+import { observer, lazyload } from "./observe.js"
 import { reddit } from "./reddit.api.js"
+import { gfycat, redgifs } from "./external.js"
+import { createVideo } from "./video.js"
 
 import Bricks from "bricks.js"
-import Hls from "hls.js"
 
 const fetchJsonp = require("fetch-jsonp")
 
@@ -15,12 +16,6 @@ const spinner = document.getElementById("spinner")
 const overlay = document.getElementById("overlay")
 const fullPost = document.getElementById("full-post")
 const comments = document.getElementById("comments")
-
-const hlsType = "application/vnd.apple.mpegurl"
-
-let hls
-
-const observer = new IntersectionObserver(observe, { rootMargin: '200px' })
 
 const once = { once: true }
 
@@ -258,27 +253,24 @@ function createPost(post) {
 	return div
 }
 
-// FIXME: Mom's spaghetti
 function createContent(post) {
 	const content = document.createElement("div")
 	content.className = "post-content"
 
-	if (post.hint === "image") {
-
+	if (post.hint === "image")
+	{
 		// GIF
-		if (post.preview.variants.mp4) {
-
+		if (post.preview.variants.mp4)
+		{
 			let url = post.preview.variants.mp4.source.url
 
 			if (post.preview.variants.mp4.resolutions.length > 0)
 				url = post.preview.variants.mp4.resolutions.last_or(3).url
 
-			content.appendChild(
-				createVideo({ sd: url }, null, "video/mp4")
-			)
-
-		} else {
-
+			content.appendChild(createVideo({ sd: url }, null, "video/mp4"))
+		}
+		else
+		{
 			let previewURL = post.preview.source.url
 			let placeholderURL = post.thumbnail.url
 
@@ -288,37 +280,34 @@ function createContent(post) {
 				placeholderURL = post.preview.resolutions[0].url
 			}
 
-			content.appendChild(
-				createImg(previewURL, null, post.preview.source.url)
-			)
+			content.appendChild(createImg(previewURL, null, post.preview.source.url))
 		}
 
 		content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
-
-	} else if (post.hint === "hosted:video") {
-
+	}
+	else if (post.hint === "hosted:video")
+	{
 		let poster = post.preview.source.url
 
 		if (post.preview.resolutions.length > 0)
 			poster = post.preview.resolutions.last_or(3).url
 
-		content.appendChild(
-			createVideo({ hls: post.media.reddit_video.hls_url, fallback: post.media.reddit_video.fallback_url }, poster, hlsType, true)
-		)
+		content.appendChild(createVideo(post.media, poster, true))
 
-		// For some reason width and height where swapped in media, so here's workaround
-		content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
-
-	} else if (post.hint === "rich:video") {
-
-		if (post.media.type === "gfycat.com") {
+		content.style.height = scale(post.media.height, post.media.width, 400) + "px"
+	}
+	else if (post.hint === "rich:video")
+	{
+		if (post.media.type === "gfycat.com")
+		{
 			const gif = gfycat(post.media.oembed.thumbnail_url)
-			content.appendChild(
-				createVideo(gif, null, "video/mp4")
-			)
+			content.appendChild(createVideo(gif, null, "video/mp4"))
 			content.style.height = scale(post.media.oembed.thumbnail_height, post.media.oembed.thumbnail_width, 400) + "px"
-		} else if (post.media.type === "redgifs.com") {
+		}
+		else if (post.media.type === "redgifs.com")
+		{
 			const video = createVideo(null, post.preview.source.url, "video/mp4")
+
 			video.addEventListener("enterView", () => {
 				redgifs(post.url).then(urls => {
 					video.addSource(urls.sd, "video/mp4")
@@ -326,9 +315,12 @@ function createContent(post) {
 					video.load()
 				})
 			}, once)
+
 			content.appendChild(video)
 			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
-		} else {
+		}
+		else
+		{
 			content.innerHTML += post.media.oembed.html
 			content.firstChild.dataset.src = content.firstChild.src
 			content.firstChild.src = ""
@@ -340,8 +332,9 @@ function createContent(post) {
 			observer.observe(content.firstChild)
 		}
 
-	} else if (post.hint === "link") { // Reposts
-
+	}
+	else if (post.hint === "link") // Reposts
+	{
 		let previewURL = post.preview.source.url
 		let placeholderURL = post.thumbnail.url
 
@@ -350,24 +343,30 @@ function createContent(post) {
 			placeholderURL = post.preview.resolutions[0].url
 		}
 
-		content.appendChild( createLink(post.url, createImg(previewURL, placeholderURL)) )
+		content.appendChild(createLink(post.url, createImg(previewURL, placeholderURL)))
 		content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
-
-	} else if (post.html != null) {
+	}
+	else if (post.html != null)
+	{
 		content.innerHTML += post.html
 		// Remove SC_ON / SC_OFF commments
 		content.childNodes[0].remove()
 		content.childNodes[1].remove()
-	} else if (post.url.endsWith(".jpg")) {
-		content.appendChild( createImg(post.url) )
-	} else if (post.gallery) {
+	}
+	else if (post.url.endsWith(".jpg"))
+	{
+		content.appendChild(createImg(post.url))
+	}
+	else if (post.gallery)
+	{
 		const images = post.gallery.map(img => wrap(createImg(img.p.last_or(3).u, img.p[0].u, img.s.u), "li"))
-		const album = createAlbum(images)
 
-		content.appendChild(album)
+		content.appendChild(createAlbum(images))
 		content.style.height = scale(post.gallery[0].s.y, post.gallery[0].s.x, 400) + "px"
-	} else if (!post.url.includes(post.permalink)) {
-		content.appendChild( createLink(post.url) )
+	}
+	else if (!post.url.includes(post.permalink))
+	{
+		content.appendChild(createLink(post.url))
 	}
 
 	return content
@@ -422,120 +421,12 @@ function createImg(url, placeholder, source) {
 	img.addEventListener("enterView", (e) => {
 		lazyload(e.target, "src")
 		e.target.classList.remove("blur-up")
-		delete img.observe
+		delete e.target.observe
 	}, once)
 
 	observer.observe(img)
 
 	return img
-}
-
-function initHLS(event) {
-	if (!hls) hls = new Hls()
-
-	if (hls.media === event.target) return;
-
-	if (hls.media) {
-		hls.media.pause()
-		hls.media.src = null
-		hls.destroy()
-	}
-
-	hls = new Hls()
-	const url = event.target.source
-	hls.attachMedia(event.target)
-	hls.loadSource(url)
-	hls.media.play()
-	// hls.on(Hls.Events.MANIFEST_PARSED, maximizeQuality)
-}
-
-// function maximizeQuality(event, data) {
-	// hls data.levels.
-// }
-
-function createVideo(urls, poster, type, controls) {
-	const video = document.createElement("video")
-	video.addSource = addSource
-
-	if (poster) {
-		video.dataset.poster = poster
-		video.preload = "none"
-		video.observe = true
-
-		video.addEventListener("enterView", (e) => {
-			lazyload(e.target, "poster")
-			if (!e.target.loop)
-				e.target.observe = false
-		}, once)
-
-		observer.observe(video)
-	}
-
-	// TODO: Custom controls
-	if (controls) {
-		video.controls = true
-
-		// const controls = document.createElement("div")
-
-		// const playpause = document.createElement("div")
-		// playpause.addEventListener('click', () => {
-		// if (video.paused || video.ended) {
-		// video.play()
-		// } else {
-		// video.pause()
-		// }
-		// });
-
-		// const progress = document.createElement("progress")
-		// video.addEventListener('loadedmetadata', () => {
-		// progress.setAttribute('max', video.duration);
-		// });
-
-		// const volume = document.createElement("div")
-		// const fullscreen = document.createElement("div")
-
-	} else {
-		video.loop = video.autoplay = video.muted = true
-	}
-
-	video.addEventListener("play", onPlay)
-	video.addEventListener("pause", onPause)
-
-	video.addEventListener("exitView", video.pause)
-
-	if (!urls) return video
-
-	if (urls.hls && type === hlsType) {
-		if (Hls.isSupported()) {
-			video.source = urls.hls
-			video.addEventListener("play", initHLS)
-		} else if (video.canPlayType(hlsType)) {
-			video.addSource(urls.hls, hlsType)
-		}
-	}
-
-	if (urls.fallback_url)
-		video.addSource(urls.fallback_url, type)
-
-	if (urls.sd)
-		video.addSource(urls.sd, type)
-
-	if (urls.hd)
-		video.addSource(urls.hd, type)
-
-	return video
-}
-
-function onPlay(event) {
-	const video = event.target
-	video.observe = true;
-	observer.observe(video)
-}
-
-function onPause(event) {
-	const video = event.target
-	delete video.observe;
-	observer.unobserve(video)
 }
 
 function createLink(url, preview) {
@@ -615,31 +506,6 @@ function createAlbum(images) {
 	return album
 }
 
-const enterView = new Event("enterView")
-const exitView = new Event("exitView")
-
-function observe(entries, observer) {
-	entries.forEach(entry => {
-		const el = entry.target
-
-		if (entry.isIntersecting) {
-			el.dispatchEvent(enterView)
-		} else {
-			el.dispatchEvent(exitView)
-		}
-
-		if (!el.observe)
-			observer.unobserve(el)
-	})
-}
-
-function lazyload(element, name) {
-	if (element.dataset[name]) {
-		element[name] = element.dataset[name]
-		delete element.dataset[name]
-	}
-}
-
 function ago(date) {
 	const suffix = (n) => {
 		if (n > 1) {
@@ -683,13 +549,6 @@ function wrap(e, tag = "div") {
 function empty(elem) {
 	while (elem.firstChild)
 		elem.removeChild(elem.firstChild)
-}
-
-function addSource(src, type) {
-	const source = document.createElement("source")
-	source.src = src
-	source.type = type
-	this.appendChild(source)
 }
 
 function openOverlay() {
