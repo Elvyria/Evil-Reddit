@@ -185,15 +185,13 @@ function openPost(title, content, permalink) {
 	if (comments.loaded !== permalink) {
 		empty(comments)
 
-		// TODO: Replies
+		// TODO: Load more comments, limit levels
 		reddit.requestPost(permalink).then(json => {
-			const reveal = (comment) => { comment.style.opacity = 1 }
 			const frag = document.createDocumentFragment()
 
 			json[1].data.children.forEach((child, i) => {
-				const comment = createComment(child.data)
-				frag.appendChild(comment)
-				setTimeout(reveal, 15 * i, comment);
+				if (child.kind !== "more")
+					addComment(frag, child.data)
 			})
 
 			comments.appendChild(frag)
@@ -225,6 +223,17 @@ function openPost(title, content, permalink) {
 			resolve()
 		}
 	})
+}
+
+function addComment(fragment, data, level = 0) {
+	const comment = createComment(data)
+	comment.style.paddingLeft = 21 * level + "px";
+	fragment.appendChild(comment)
+	setTimeout(e => e.style.opacity = 1, 15 * fragment.children.length, comment);
+
+	if (data.replies) {
+		data.replies.data.children.forEach(child => addComment(fragment, child.data, level + 1))
+	}
 }
 
 function createPost(post) {
@@ -294,7 +303,7 @@ function createContent(post) {
 			poster = post.preview.resolutions.last_or(3).url
 
 		content.appendChild(
-			createVideo({ hls: post.media.reddit_video.hls_url }, poster, hlsType, true)
+			createVideo({ hls: post.media.reddit_video.hls_url, fallback: post.media.reddit_video.fallback_url }, poster, hlsType, true)
 		)
 
 		// For some reason width and height where swapped in media, so here's workaround
@@ -504,6 +513,9 @@ function createVideo(urls, poster, type, controls) {
 			video.addSource(urls.hls, hlsType)
 		}
 	}
+
+	if (urls.fallback_url)
+		video.addSource(urls.fallback_url, type)
 
 	if (urls.sd)
 		video.addSource(urls.sd, type)
