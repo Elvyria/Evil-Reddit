@@ -286,6 +286,11 @@ body::-webkit-scrollbar {
 
 }
 
+.zoom-in {
+	height: auto;
+	width: 100%;
+}
+
 .comment-content .md {
 	overflow: hidden;
 }

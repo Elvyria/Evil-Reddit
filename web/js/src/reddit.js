@@ -81,6 +81,25 @@ function main(config) {
 		}
 	})
 
+	// Zoom
+	fullPost.addEventListener("click", e => {
+		const content = fullPost.getElementsByClassName("post-content")[0]
+		const img = e.target
+
+		if (content.firstChild === img && img.tagName === "IMG") {
+			if (img.classList.contains("zoom-in"))
+			{
+				content.style.overflowY = ''
+				img.classList.remove("zoom-in")
+			}
+			else
+			{
+				content.style.overflowY = "scroll"
+				img.classList.add("zoom-in")
+			}
+		}
+	})
+
 	// TODO: History states
 	// window.addEventListener("popstate", (e) => {})
 
@@ -427,6 +446,9 @@ function createImg(url, placeholder, source) {
 	observer.observe(img)
 
 	return img
+}
+
+function zoom() {
 }
 
 function createLink(url, preview) {
