@@ -48,8 +48,7 @@ function main(config) {
 		reddit.requestPosts(options.subreddit, options.sorting, after).then(posts => {
 			end = isLoading = posts.length === 0
 
-			if (end)
-				return
+			if (end) return
 
 			addPosts(posts)
 			spinner.style.display = "none"
@@ -81,10 +80,9 @@ function main(config) {
 		}
 	})
 
-	// Zoom
-	fullPost.addEventListener("click", e => {
+	const zoom = (event) => {
 		const content = fullPost.getElementsByClassName("post-content")[0]
-		const img = e.target
+		const img = event.target
 
 		if (content.firstChild === img && img.tagName === "IMG" && img.naturalHeight > img.naturalWidth) {
 			if (img.classList.contains("zoom-in"))
@@ -98,7 +96,9 @@ function main(config) {
 				img.classList.add("zoom-in")
 			}
 		}
-	})
+	}
+
+	fullPost.addEventListener("click", zoom)
 
 	// TODO: History states
 	// window.addEventListener("popstate", (e) => {})
@@ -125,12 +125,10 @@ function main(config) {
 			const title = div.getElementsByClassName("post-title")[0]
 			const content = div.getElementsByClassName("post-content")[0]
 
-			openPost(title, content, div.permalink)
+			openFullPost(title, content, div.permalink)
 		})
-	} else {
-		requestPosts()
-	}
 
+	} else requestPosts()
 }
 
 function addPosts(data) {
@@ -140,25 +138,26 @@ function addPosts(data) {
 		const post = reddit.post(child.data)
 		const div = createPost(post)
 
-		// TODO
-		div.onclick = (e) => {
-			div.style.display = "none"
-
-			const title = div.getElementsByClassName("post-title")[0]
-			const content = div.getElementsByClassName("post-content")[0]
-
-			openPost(title, content, div.permalink).then(() => {
-				div.appendChild(title)
-				div.appendChild(content)
-
-				div.style.display = ""
-			})
-		}
+		div.addEventListener("click", clickPost)
 
 		frag.appendChild(div)
 	})
 
 	ribbon.appendChild(frag)
+}
+
+function clickPost() {
+	this.style.display = "none"
+
+	const title = this.getElementsByClassName("post-title")[0]
+	const content = this.getElementsByClassName("post-content")[0]
+
+	openFullPost(title, content, this.permalink).then(() => {
+		this.appendChild(title)
+		this.appendChild(content)
+
+		this.style.display = ""
+	})
 }
 
 function parseUrl(url) {
@@ -181,19 +180,20 @@ function parseUrl(url) {
 }
 
 function search(subreddit, query) {
-	empty(ribbon)
-
 	spinner.style.display = ""
 
-	window.scrollTo(0,0);
-
 	return reddit.requestSearch(query, subreddit).then(posts => {
+		empty(ribbon)
+
+		window.scrollTo(0,0);
+
 		addPosts(posts)
+
 		spinner.style.display = "none"
 	})
 }
 
-function openPost(title, content, permalink) {
+function openFullPost(title, content, permalink) {
 	openOverlay()
 
 	if (comments.loaded !== permalink) {
@@ -225,6 +225,7 @@ function openPost(title, content, permalink) {
 
 	const subTitle = document.title
 	document.title = title.textContent
+
 	history.pushState(null, title.textContent, permalink)
 
 	return new Promise((resolve, reject) => {
@@ -240,7 +241,7 @@ function openPost(title, content, permalink) {
 }
 
 function addComment(fragment, data, level = 0) {
-	const comment = createComment(data)
+	const comment = createComment(data.author, data.body_html, ago(new Date(data.created_utc * 1000)))
 	comment.style.paddingLeft = 21 * level + "px";
 	fragment.appendChild(comment)
 	setTimeout(e => e.style.opacity = 1, 15 * fragment.children.length, comment);
@@ -260,14 +261,12 @@ function createPost(post) {
 	title.className = "post-title"
 
 	if (post.flair)
-		title.appendChild( createFlair(post.flair.text, post.flair.fg, post.flair.bg) )
+		title.appendChild(createFlair(post.flair.text, post.flair.fg, post.flair.bg))
 
 	title.innerHTML += post.title
 
-	const content = createContent(post)
-
 	div.appendChild(title)
-	div.appendChild(content)
+	div.appendChild(createContent(post))
 
 	return div
 }
@@ -389,22 +388,22 @@ function createContent(post) {
 	return content
 }
 
-function createComment(data) {
+function createComment(author, html, date) {
 	const comment = document.createElement("div")
 	comment.className = "comment"
 
-	const author = document.createElement("a")
-	author.href = "https://reddit.com/user/" + data.author
-	author.className = "comment-author"
-	author.innerText = data.author
+	const authorLink = document.createElement("a")
+	authorLink.href = "https://reddit.com/user/" + author
+	authorLink.className = "comment-author"
+	authorLink.innerText = author
 
 	const title = document.createElement("div")
-	title.appendChild(author)
-	title.innerHTML += "  •  " + ago(new Date(data.created_utc * 1000))
+	title.appendChild(authorLink)
+	title.innerHTML += "  •  " + date
 
 	const content = document.createElement("div")
 	content.className = "comment-content"
-	content.innerHTML = data.body_html
+	content.innerHTML = html
 
 	comment.appendChild(title)
 	comment.appendChild(content)
@@ -442,9 +441,6 @@ function createImg(url, placeholder, source) {
 	observer.observe(img)
 
 	return img
-}
-
-function zoom() {
 }
 
 function createLink(url, preview) {
