@@ -86,7 +86,7 @@ function main(config) {
 		const content = fullPost.getElementsByClassName("post-content")[0]
 		const img = e.target
 
-		if (content.firstChild === img && img.tagName === "IMG") {
+		if (content.firstChild === img && img.tagName === "IMG" && img.naturalHeight > img.naturalWidth) {
 			if (img.classList.contains("zoom-in"))
 			{
 				content.style.overflowY = ''
@@ -286,7 +286,7 @@ function createContent(post) {
 			if (post.preview.variants.mp4.resolutions.length > 0)
 				url = post.preview.variants.mp4.resolutions.last_or(3).url
 
-			content.appendChild(createVideo({ sd: url }, null, "video/mp4"))
+			content.appendChild(createVideo({ sd: url }))
 		}
 		else
 		{
@@ -320,12 +320,12 @@ function createContent(post) {
 		if (post.media.type === "gfycat.com")
 		{
 			const gif = gfycat(post.media.oembed.thumbnail_url)
-			content.appendChild(createVideo(gif, null, "video/mp4"))
+			content.appendChild(createVideo(gif))
 			content.style.height = scale(post.media.oembed.thumbnail_height, post.media.oembed.thumbnail_width, 400) + "px"
 		}
 		else if (post.media.type === "redgifs.com")
 		{
-			const video = createVideo(null, post.preview.source.url, "video/mp4")
+			const video = createVideo(null, post.preview.source.url)
 
 			video.addEventListener("enterView", () => {
 				redgifs(post.url).then(urls => {
@@ -344,13 +344,11 @@ function createContent(post) {
 			content.firstChild.dataset.src = content.firstChild.src
 			content.firstChild.src = ""
 			content.firstChild.style.cssText = ""
-			content.firstChild.observe = true
 			content.firstChild.addEventListener("enterView", (e) => lazyload(e.target, "src"), once)
 
 			content.style.height = scale(post.media.oembed.height, post.media.oembed.width, 400) + "px"
 			observer.observe(content.firstChild)
 		}
-
 	}
 	else if (post.hint === "link") // Reposts
 	{
@@ -435,12 +433,10 @@ function createImg(url, placeholder, source) {
 	img.dataset.src = url
 	img.source = source
 	img.referrerPolicy = "no-referrer"
-	img.observe = true
 
 	img.addEventListener("enterView", (e) => {
 		lazyload(e.target, "src")
 		e.target.classList.remove("blur-up")
-		delete e.target.observe
 	}, once)
 
 	observer.observe(img)

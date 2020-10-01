@@ -7,14 +7,10 @@ function observe(entries, observer) {
 	entries.forEach(entry => {
 		const el = entry.target
 
-		if (entry.isIntersecting) {
+		if (entry.isIntersecting)
 			el.dispatchEvent(enterView)
-		} else {
+		else
 			el.dispatchEvent(exitView)
-		}
-
-		if (!el.observe)
-			observer.unobserve(el)
 	})
 }
 

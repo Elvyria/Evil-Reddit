@@ -1,5 +1,9 @@
 import { observer, lazyload } from "./observe.js"
 
+// import { MediaPlayer } from "dashjs"
+
+let player
+
 const mime = {
 	hls: "application/vnd.apple.mpegurl",
 	dash: "application/dash+xml",
@@ -12,9 +16,8 @@ export function createVideo(urls, poster, controls) {
 	if (poster) {
 		video.dataset.poster = poster
 		video.preload = "none"
-		video.observe = true
 
-		video.addEventListener("enterView", enterView, { once: true })
+		video.addEventListener("enterView", loadPoster, { once: true })
 
 		observer.observe(video)
 	}
@@ -44,6 +47,10 @@ export function createVideo(urls, poster, controls) {
 
 	} else {
 		video.loop = video.autoplay = video.muted = true
+
+		video.addEventListener("enterView", video.play)
+
+		observer.observe(video)
 	}
 
 	video.addEventListener("play", play)
@@ -65,6 +72,10 @@ export function createVideo(urls, poster, controls) {
 		// }
 	}
 
+	if (urls.dash) {
+		video.addEventListener("play", initDash)
+	}
+
 	if (urls.fallback)
 		video.addSource(urls.fallback)
 
@@ -77,26 +88,17 @@ export function createVideo(urls, poster, controls) {
 	return video
 }
 
-function play(event) {
-	if (event.target !== this)
-		return
-
-	this.observe = true;
+function play() {
 	observer.observe(this)
 }
 
-function pause(event) {
-	if (event.target !== this)
-		return
-
-	delete this.observe;
-	observer.unobserve(this)
+function pause() {
+	if (!this.loop)
+		observer.unobserve(this)
 }
 
-function enterView(event) {
-	event.target.poster = event.target.dataset.poster
-	if (!event.target.loop)
-		event.target.observe = false
+function loadPoster() {
+	lazyload(this, "poster")
 }
 
 function addSource(src, type) {
@@ -107,6 +109,12 @@ function addSource(src, type) {
 		source.type = type
 
 	this.appendChild(source)
+}
+
+function initDash(event) {
+	// if (!player) player = MediaPlayer.create()
+
+	// player.initialize(event.target, event.target.source, false);
 }
 
 function initHLS(event) {
