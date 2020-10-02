@@ -40,7 +40,7 @@ reddit.requestSearchNames = (query, exact = false) => {
 }
 
 reddit.post = (data) => {
-	return {
+	const post = {
 		name:      data.name,
 		permalink: data.permalink,
 		title:     data.title,
@@ -48,27 +48,75 @@ reddit.post = (data) => {
 		html:      data.selftext_html,
 		preview:   data.preview ? data.preview.images[0] : undefined,
 		gallery:   data.is_gallery ? Object.values(data.media_metadata) : undefined,
-		media:     data.media && data.media.reddit_video ? reddit.media(data.media) : data.media,
+		media:     data.media && data.media.reddit_video ? reddit.media(data.media.reddit_video) : data.media,
 		url:       data.url,
 		thumbnail: {
 			url: data.thumbnail,
 			height: data.thumbnail_height,
 			width: data.thumbnail_width,
-		}, 
+		},
 		flair: data.link_flair_text === null ? undefined : {
 			text: data.link_flair_text,
 			fg: data.link_flair_text_color,
 			bg: data.link_flair_background_color,
 		},
 	}
+
+	post.hint = reddit.hint(post)
+
+	return post
 }
 
-reddit.media = (data) => {
+reddit.hint = (post) => {
+	if (post.hint === "image")
+	{
+		return post.preview.variants.mp4 ? "gif" : "image"
+	}
+	else if (post.hint === "hosted:video")
+	{
+		return "video"
+	}
+	else if (post.hint === "rich:video")
+	{
+		switch (post.media.type) {
+			case "gfycat.com":
+				return "iframe:gfycat"
+			case "redgifs.com":
+				return "iframe:redgifs"
+			default:
+				return "iframe"
+		}
+	}
+	else if (post.hint === "link")
+	{
+		return "link"
+	}
+	else if (post.gallery)
+	{
+		return "gallery"
+	}
+	else if (post.html)
+	{
+		return "html"
+	}
+	else if (post.url.endsWith(".gif"))
+	{
+		return "gif"
+	}
+	else if (!post.url.includes(post.permalink))
+	{
+		return "link"
+	}
+
+	return "unknown"
+}
+
+reddit.media = (redditVideo) => {
 	return {
-		hls: data.reddit_video.hls_url,
-		dash: data.reddit_video.dash_url,
-		fallback: data.reddit_video.fallback_url,
-		height: data.reddit_video.height,
-		width: data.reddit_video.width,
+		hls: redditVideo.hls_url,
+		dash: redditVideo.dash_url,
+		fallback: redditVideo.fallback_url,
+		height: redditVideo.height,
+		width: redditVideo.width,
 	}
 }

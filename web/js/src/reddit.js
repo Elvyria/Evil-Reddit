@@ -275,55 +275,59 @@ function createContent(post) {
 	const content = document.createElement("div")
 	content.className = "post-content"
 
-	if (post.hint === "image")
-	{
-		// GIF
-		if (post.preview.variants.mp4)
-		{
+	switch (post.hint) {
+		case "image": {
+			let thumbnail = post.thumbnail.url
+			let source = post.url
+
+			if (post.preview && post.preview.resolutions.length > 0) {
+				thumbnail = post.preview.resolutions.last_or(3).url
+			}
+
+			content.appendChild(createImg(thumbnail, null, source))
+			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
+
+			break
+		}
+		case "gif": {
 			let url = post.preview.variants.mp4.source.url
 
 			if (post.preview.variants.mp4.resolutions.length > 0)
 				url = post.preview.variants.mp4.resolutions.last_or(3).url
 
 			content.appendChild(createVideo({ sd: url }))
+			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
+
+			break
 		}
-		else
-		{
-			let previewURL = post.preview.source.url
-			let placeholderURL = post.thumbnail.url
+		case "gallery": {
+			const images = post.gallery.map(img => wrap(createImg(img.p.last_or(3).u, img.p[0].u, img.s.u), "li"))
 
-			// TODO: Add config option - placeholder resolution
-			if (post.preview.resolutions.length > 0) {
-				previewURL = post.preview.resolutions.last_or(3).url
-				placeholderURL = post.preview.resolutions[0].url
-			}
+			content.appendChild(createAlbum(images))
+			content.style.height = scale(post.gallery[0].s.y, post.gallery[0].s.x, 400) + "px"
 
-			content.appendChild(createImg(previewURL, null, post.preview.source.url))
+			break
 		}
+		case "video": {
+			let poster = post.preview.source.url
 
-		content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
-	}
-	else if (post.hint === "hosted:video")
-	{
-		let poster = post.preview.source.url
+			if (post.preview.resolutions.length > 0)
+				poster = post.preview.resolutions.last_or(3).url
 
-		if (post.preview.resolutions.length > 0)
-			poster = post.preview.resolutions.last_or(3).url
+			content.appendChild(createVideo(post.media, poster, true))
 
-		content.appendChild(createVideo(post.media, poster, true))
+			content.style.height = scale(post.media.height, post.media.width, 400) + "px"
 
-		content.style.height = scale(post.media.height, post.media.width, 400) + "px"
-	}
-	else if (post.hint === "rich:video")
-	{
-		if (post.media.type === "gfycat.com")
-		{
+			break
+		}
+		case "iframe:gfycat": {
 			const gif = gfycat(post.media.oembed.thumbnail_url)
 			content.appendChild(createVideo(gif))
 			content.style.height = scale(post.media.oembed.thumbnail_height, post.media.oembed.thumbnail_width, 400) + "px"
+
+			break
 		}
-		else if (post.media.type === "redgifs.com")
-		{
+		case "iframe:redgifs": {
 			const video = createVideo(null, post.preview.source.url)
 
 			video.addEventListener("enterView", () => {
@@ -336,9 +340,10 @@ function createContent(post) {
 
 			content.appendChild(video)
 			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
+
+			break
 		}
-		else
-		{
+		case "iframe": {
 			content.innerHTML += post.media.oembed.html
 			content.firstChild.dataset.src = content.firstChild.src
 			content.firstChild.src = ""
@@ -347,42 +352,32 @@ function createContent(post) {
 
 			content.style.height = scale(post.media.oembed.height, post.media.oembed.width, 400) + "px"
 			observer.observe(content.firstChild)
+
+			break
 		}
-	}
-	else if (post.hint === "link") // Reposts
-	{
-		let previewURL = post.preview.source.url
-		let placeholderURL = post.thumbnail.url
+		case "link": {
+			let previewURL = post.preview.source.url
+			let placeholderURL = post.thumbnail.url
 
-		if (post.preview.resolutions.length > 0) {
-			previewURL = post.preview.resolutions.last_or(3).url
-			placeholderURL = post.preview.resolutions[0].url
+			if (post.preview.resolutions.length > 0) {
+				previewURL = post.preview.resolutions.last_or(3).url
+				placeholderURL = post.preview.resolutions[0].url
+			}
+
+			content.appendChild(createLink(post.url, createImg(previewURL, placeholderURL)))
+			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
+
+			break
 		}
+		case "html": {
+			content.innerHTML += post.html
 
-		content.appendChild(createLink(post.url, createImg(previewURL, placeholderURL)))
-		content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
-	}
-	else if (post.html != null)
-	{
-		content.innerHTML += post.html
-		// Remove SC_ON / SC_OFF commments
-		content.childNodes[0].remove()
-		content.childNodes[1].remove()
-	}
-	else if (post.url.endsWith(".jpg"))
-	{
-		content.appendChild(createImg(post.url))
-	}
-	else if (post.gallery)
-	{
-		const images = post.gallery.map(img => wrap(createImg(img.p.last_or(3).u, img.p[0].u, img.s.u), "li"))
+			// Remove SC_ON / SC_OFF commments
+			content.childNodes[0].remove()
+			content.childNodes[1].remove()
 
-		content.appendChild(createAlbum(images))
-		content.style.height = scale(post.gallery[0].s.y, post.gallery[0].s.x, 400) + "px"
-	}
-	else if (!post.url.includes(post.permalink))
-	{
-		content.appendChild(createLink(post.url))
+			break
+		}
 	}
 
 	return content
