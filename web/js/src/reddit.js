@@ -356,16 +356,19 @@ function createContent(post) {
 			break
 		}
 		case "link": {
-			let previewURL = post.preview.source.url
-			let placeholderURL = post.thumbnail.url
+			if (post.preview) {
+				let previewURL = post.preview.source.url
+				let placeholderURL = post.thumbnail.url
 
-			if (post.preview.resolutions.length > 0) {
-				previewURL = post.preview.resolutions.last_or(3).url
-				placeholderURL = post.preview.resolutions[0].url
-			}
+				if (post.preview.resolutions.length > 0) {
+					previewURL = post.preview.resolutions.last_or(3).url
+					placeholderURL = post.preview.resolutions[0].url
+				}
 
-			content.appendChild(createLink(post.url, createImg(previewURL, placeholderURL)))
-			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
+				content.appendChild(createLink(post.url, createImg(previewURL, placeholderURL)))
+				content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
+
+			} else content.appendChild(createLink(post.url))
 
 			break
 		}
