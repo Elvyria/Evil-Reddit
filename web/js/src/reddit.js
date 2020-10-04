@@ -6,8 +6,6 @@ import { createVideo } from "./video.js"
 
 import Bricks from "bricks.js"
 
-const fetchJsonp = require("fetch-jsonp")
-
 const favicon = document.getElementById("icon")
 const ribbon = document.getElementById("reddit-ribbon")
 const searchInput = document.querySelector("input")
@@ -117,6 +115,8 @@ function main(config) {
 		favicon.href = data.icon_img
 	})
 
+	ribbon.addEventListener("click", clickPost)
+
 	if (options.fullPost) {
 		reddit.requestPost(window.location.pathname, options.sorting).then(data => {
 			const post = reddit.post(data[0].data.children[0].data)
@@ -138,25 +138,27 @@ function addPosts(data) {
 		const post = reddit.post(child.data)
 		const div = createPost(post)
 
-		div.addEventListener("click", clickPost)
-
 		frag.appendChild(div)
 	})
 
 	ribbon.appendChild(frag)
 }
 
-function clickPost() {
-	this.style.display = "none"
+function clickPost(event) {
+	const post = event.target.closest(".ribbon-post")
 
-	const title = this.getElementsByClassName("post-title")[0]
-	const content = this.getElementsByClassName("post-content")[0]
+	if (!post) return
 
-	openFullPost(title, content, this.permalink).then(() => {
-		this.appendChild(title)
-		this.appendChild(content)
+	post.style.display = "none"
 
-		this.style.display = ""
+	const title = post.getElementsByClassName("post-title")[0]
+	const content = post.getElementsByClassName("post-content")[0]
+
+	openFullPost(title, content, post.permalink).then(() => {
+		post.appendChild(title)
+		post.appendChild(content)
+
+		post.style.display = ""
 	})
 }
 
