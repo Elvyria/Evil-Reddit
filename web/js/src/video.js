@@ -1,8 +1,8 @@
 import { observer, lazyload } from "./observe.js"
 
-// import { MediaPlayer } from "dashjs"
+import Hls from "hls.js"
 
-let player
+let hls
 
 const mime = {
 	hls: "application/vnd.apple.mpegurl",
@@ -61,23 +61,19 @@ export function createVideo(urls, poster, controls) {
 	if (!urls) return video
 
 	if (urls.hls) {
-		// if (Hls.isSupported())
-		// {
-			// video.source = urls.hls
-			// video.addEventListener("play", initHLS)
-		// }
-		// else if (video.canPlayType(mime.hls))
-		// {
-			// video.addSource(urls.hls, mime.hls)
-		// }
+		if (Hls.isSupported())
+		{
+			video.dataset.src = urls.hls
+			video.addEventListener("play", initHLS)
+		}
+		else if (video.canPlayType(mime.hls))
+		{
+			video.addSource(urls.hls, mime.hls)
+		}
 	}
 
-	if (urls.dash) {
-		video.addEventListener("play", initDash)
-	}
-
-	if (urls.fallback)
-		video.addSource(urls.fallback)
+	// if (urls.fallback)
+		// video.addSource(urls.fallback)
 
 	if (urls.sd)
 		video.addSource(urls.sd)
@@ -111,29 +107,27 @@ function addSource(src, type) {
 	this.appendChild(source)
 }
 
-function initDash(event) {
-	// if (!player) player = MediaPlayer.create()
-
-	// player.initialize(event.target, event.target.source, false);
-}
-
-function initHLS(event) {
+function initHLS() {
 	if (!hls) hls = new Hls()
 
-	if (hls.media === event.target) return;
+	if (hls.media === this) return;
 
 	if (hls.media) {
 		hls.media.pause()
 		hls.media.src = null
 		hls.destroy()
+
+		hls = new Hls()
 	}
 
-	hls = new Hls()
-	const url = event.target.source
-	hls.attachMedia(event.target)
-	hls.loadSource(url)
-	hls.media.play()
-	// hls.on(Hls.Events.MANIFEST_PARSED, maximizeQuality)
+	hls.attachMedia(this)
+	hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+		hls.loadSource(hls.media.dataset.src)
+		hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+			hls.currentLevel = data.levels.length - 1
+			hls.media.play()
+		})
+	})
 }
 
 // function maximizeQuality(event, data) {
