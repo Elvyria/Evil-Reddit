@@ -10,10 +10,10 @@ function observe(entries, _observer) {
 		if (entry.isIntersecting)
 		{
 			switch (el.tagName) {
-				case "IMG":
 				case "IFRAME":
+				case "IMG":
 					lazyload(el, "src")
-					break;
+					break
 				default:
 					el.dispatchEvent(enterView)
 			}

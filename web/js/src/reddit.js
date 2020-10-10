@@ -50,6 +50,8 @@ function main(config) {
 
 			options.sortSub = reddit.sortMethods.subreddit[i]
 
+			window.scrollTo({ top: 0, behavior: 'smooth' });
+
 			reddit.requestPosts(options.subreddit, options.sortSub).then(posts => {
 				empty(ribbon)
 
@@ -59,7 +61,6 @@ function main(config) {
 					return
 				}
 
-				window.scrollTo({ top: 0, behavior: 'smooth' });
 				addPosts(posts)
 				brick.pack()
 			})
@@ -452,7 +453,7 @@ function createImg(url, source) {
 	img.dataset.src = url
 	img.dataset.source = source
 	img.referrerPolicy = "no-referrer"
-	img.decode = "async"
+	img.decoding = "async"
 
 	observer.observe(img)
 
