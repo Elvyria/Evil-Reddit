@@ -12,7 +12,7 @@ reddit.requestPosts = (subreddit, sort = reddit.sortMethods.subreddit[0], after 
 		.then(json => json.data.children)
 }
 
-reddit.requestPost = (permalink, sort = reddit.sortMethods.comments[0]) => {
+reddit.requestPost = async (permalink, sort = reddit.sortMethods.comments[0]) => {
 	const url = `https://www.reddit.com${permalink}.json?raw_json=1`
 	return fetch(url)
 		.then(resp => resp.json())
@@ -26,7 +26,7 @@ reddit.requestAbout = (subreddit) => {
 }
 
 reddit.requestSearch = (query, subreddit = "", sort = "", after = "", limit = "100") => {
-	const url = `https://www.reddit.com/r/${subreddit}/search/.json?q=${query}&restrict_sr=1&limit=${limit}&raw_json=1`
+	const url = `https://www.reddit.com/r/${subreddit}/search/.json?q=${query}&restrict_sr=1&limit=${limit}&include_over_18=on&raw_json=1`
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.data.children)
