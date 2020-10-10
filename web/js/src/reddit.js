@@ -17,64 +17,53 @@ const comments = document.getElementById("comments")
 
 const once = { once: true }
 
+//TODO: Rename me
+let options
+
+const brick = Bricks(
+	{
+		container: ribbon,
+		packed: 'data-packed',
+		sizes: [
+			{               columns: 1, gutter: 10 },
+			{ mq: "800px",  columns: 2, gutter: 10 },
+			{ mq: "1280px", columns: 3, gutter: 10 },
+			{ mq: "1920px", columns: 4, gutter: 10 }
+		],
+		position: false
+	}
+).resize(true)
+
 loadConfig("/config.json").then(main)
 
 function main(config) {
-	let isLoading = true
-	let end = false
 
-	const sizes = [
-		{ columns: 1, gutter: 10 },
-		{ mq: "800px", columns: 2, gutter: 10 },
-		{ mq: "1280px", columns: 3, gutter: 10 },
-		{ mq: "1920px", columns: 4, gutter: 10 }
-	]
-
-	const brick = Bricks({
-		container: ribbon,
-		packed: 'data-packed',
-		sizes: sizes,
-		position: false
-	}).resize(true)
-
-	//TODO: Rename me
-	const options = parseUrl(new URL(window.location.href))
-
-	const requestPosts = (after) => {
-		isLoading = true
-
-		reddit.requestPosts(options.subreddit, options.sorting, after).then(posts => {
-			end = isLoading = posts.length === 0
-
-			if (end) return
-
-			addPosts(posts)
-			spinner.style.display = "none"
-			brick.pack()
-			isLoading = false
-		})
-	}
-
-	const loadOnScroll = (event) => {
-		if (!isLoading && !end && ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000)) {
-			requestPosts(ribbon.lastChild.name ?? "")
-		}
-	}
-
-	window.addEventListener("scroll", loadOnScroll)
+	options = parseUrl(new URL(window.location.href))
 
 	// Sort buttons
 	Array.from(document.getElementById("sorting").children).forEach((button, i) => {
 		button.onclick = () => {
+			if (options.sorting === reddit.sortMethods.subreddit[i])
+				return
+
 			options.sorting = reddit.sortMethods.subreddit[i]
 
-			empty(ribbon)
-			window.scrollTo(0, 0)
 			spinner.style.display = ""
-			isLoading = true
-			end = false
+			window.scrollTo(0, 0)
 
-			requestPosts()
+			reddit.requestPosts(options.subreddit, options.sorting).then(posts => {
+				empty(ribbon)
+
+				//TODO: Create status element
+				if (posts.length === 0) {
+					spinner.style.display = "none"
+					return
+				}
+
+				addPosts(posts)
+				spinner.style.display = "none"
+				brick.pack()
+			})
 		}
 	})
 
@@ -102,7 +91,7 @@ function main(config) {
 	// window.addEventListener("popstate", (e) => {})
 
 	searchInput.addEventListener("keypress", e => {
-		if (e.keyCode === 13) {
+		if (e.key === 13) {
 			search(options.subreddit, searchInput.value).then(brick.pack)
 
 			//TODO: History states
@@ -128,7 +117,20 @@ function main(config) {
 			openFullPost(title, content, div.permalink)
 		})
 
-	} else requestPosts()
+	} else {
+		reddit.requestPosts(options.subreddit, options.sorting).then(posts => {
+
+			//TODO: Create status element
+			if (posts.length === 0) {
+				spinner.style.display = "none"
+				return
+			}
+
+			addPosts(posts)
+			spinner.style.display = "none"
+			brick.pack()
+		})
+	}
 }
 
 function addPosts(data) {
@@ -140,6 +142,21 @@ function addPosts(data) {
 
 		frag.appendChild(div)
 	})
+
+	const lastChild = frag.lastChild
+
+	lastChild.addEventListener("enterView", () => {
+		observer.unobserve(lastChild)
+
+		reddit.requestPosts(options.subreddit, options.sorting, lastChild.name).then(posts => {
+			if (posts.length === 0) return
+
+			addPosts(posts)
+			brick.update()
+		})
+	}, once)
+
+	observer.observe(lastChild)
 
 	ribbon.appendChild(frag)
 }
@@ -205,7 +222,7 @@ function openFullPost(title, content, permalink) {
 		reddit.requestPost(permalink).then(json => {
 			const frag = document.createDocumentFragment()
 
-			json[1].data.children.forEach((child, i) => {
+			json[1].data.children.forEach(child => {
 				if (child.kind !== "more")
 					addComment(frag, child.data)
 			})
@@ -230,7 +247,7 @@ function openFullPost(title, content, permalink) {
 
 	history.pushState(null, title.textContent, permalink)
 
-	return new Promise((resolve, reject) => {
+	return new Promise(resolve => {
 		overlay.onclick = () => {
 			closeOverlay()
 
@@ -332,12 +349,14 @@ function createContent(post) {
 		case "iframe:redgifs": {
 			const video = createVideo(null, post.preview.source.url)
 
-			video.addEventListener("enterView", () => {
+			video.addEventListener("enterView", (e) => {
 				redgifs(post.url).then(urls => {
 					video.addSource(urls.sd, "video/mp4")
 					video.addSource(urls.hd, "video/mp4")
 					video.load()
 				})
+
+				e.stopPropagation()
 			}, once)
 
 			content.appendChild(video)
@@ -350,7 +369,10 @@ function createContent(post) {
 			content.firstChild.dataset.src = content.firstChild.src
 			content.firstChild.src = ""
 			content.firstChild.style.cssText = ""
-			content.firstChild.addEventListener("enterView", (e) => lazyload(e.target, "src"), once)
+			content.firstChild.addEventListener("enterView", (e) => {
+				lazyload(e.target, "src")
+				e.stopPropagation()
+			}, once)
 
 			content.style.height = scale(post.media.oembed.height, post.media.oembed.width, 400) + "px"
 			observer.observe(content.firstChild)
@@ -432,10 +454,12 @@ function createImg(url, placeholder, source) {
 	img.dataset.src = url
 	img.source = source
 	img.referrerPolicy = "no-referrer"
+	img.decoding = "async"
 
 	img.addEventListener("enterView", (e) => {
 		lazyload(e.target, "src")
 		e.target.classList.remove("blur-up")
+		e.stopPropagation()
 	}, once)
 
 	observer.observe(img)

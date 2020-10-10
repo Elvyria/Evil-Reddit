@@ -3,7 +3,7 @@ export const observer = new IntersectionObserver(observe, { rootMargin: '200px' 
 const enterView = new Event("enterView")
 const exitView = new Event("exitView")
 
-function observe(entries, observer) {
+function observe(entries, _observer) {
 	entries.forEach(entry => {
 		const el = entry.target
 
@@ -17,6 +17,7 @@ function observe(entries, observer) {
 export function lazyload(element, name) {
 	if (element.dataset[name]) {
 		element[name] = element.dataset[name]
-		delete element.dataset[name]
+		element.dataset[name] = null
+		observer.unobserve(element)
 	}
 }
