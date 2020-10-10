@@ -4,3 +4,4 @@ web/assets/background.png
 web/js/*.js
 web/.pnp
 web/.pnp.js
+node_modules
