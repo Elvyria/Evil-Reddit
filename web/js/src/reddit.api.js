@@ -2,18 +2,26 @@ export let reddit = {}
 
 reddit.sortMethods = {
 	subreddit: ["hot", "new", "top", "rising"],
-	comments: ["confidence", "top", "new", "controversial", "old", "qa"]
+	comments:  ["confidence", "top", "new", "controversial", "old", "qa"]
 }
 
-reddit.requestPosts = (subreddit, sort = reddit.sortMethods.subreddit[0], after = "", limit = "100") => {
+reddit.requestPosts = (subreddit, sort, after = "", limit = "100") => {
+	if (!reddit.sortMethods.subreddit.includes(sort))
+		sort = reddit.sortMethods.subreddit[0]
+
 	const url = `https://www.reddit.com/r/${subreddit}/${sort}/.json?after=${after}&limit=${limit}&raw_json=1`;
+
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.data.children)
 }
 
-reddit.requestPost = async (permalink, sort = reddit.sortMethods.comments[0]) => {
+reddit.requestPost = (permalink, sort) => {
+	if (!reddit.sortMethods.comments.includes(sort))
+		sort = reddit.sortMethods.comments[0]
+
 	const url = `https://www.reddit.com${permalink}.json?raw_json=1`
+
 	return fetch(url)
 		.then(resp => resp.json())
 }

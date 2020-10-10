@@ -11,6 +11,7 @@ function observe(entries, _observer) {
 		{
 			switch (el.tagName) {
 				case "IMG":
+				case "IFRAME":
 					lazyload(el, "src")
 					break;
 				default:
@@ -21,12 +22,16 @@ function observe(entries, _observer) {
 	})
 }
 
-export function lazyload(element, name) {
-	if (element.dataset[name]) {
-		element[name] = element.dataset[name]
-		delete element.dataset[name]
-		element.classList.add("lazyloaded")
-
+export function lazyload(element, data, attr) {
+	if (element.dataset[data]) {
 		observer.unobserve(element)
+
+		if (attr)
+			element[attr] = element.dataset[data]
+		else
+			element[data] = element.dataset[data]
+
+		delete element.dataset[data]
+		element.classList.add("lazyloaded")
 	}
 }

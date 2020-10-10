@@ -38,17 +38,19 @@ loadConfig("/config.json").then(main)
 
 function main(config) {
 
+	window.scrollTo({ top: 0, behavior: 'smooth' });
+
 	options = parseUrl(new URL(window.location.href))
 
 	// Sort buttons
 	Array.from(document.getElementById("sorting").children).forEach((button, i) => {
 		button.onclick = () => {
-			if (options.sorting === reddit.sortMethods.subreddit[i])
+			if (options.sortSub === reddit.sortMethods.subreddit[i])
 				return
 
-			options.sorting = reddit.sortMethods.subreddit[i]
+			options.sortSub = reddit.sortMethods.subreddit[i]
 
-			reddit.requestPosts(options.subreddit, options.sorting).then(posts => {
+			reddit.requestPosts(options.subreddit, options.sortSub).then(posts => {
 				empty(ribbon)
 
 				//TODO: Create status element
@@ -104,7 +106,7 @@ function main(config) {
 	ribbon.addEventListener("click", clickPost)
 
 	if (options.fullPost) {
-		reddit.requestPost(window.location.pathname, options.sorting).then(data => {
+		reddit.requestPost(window.location.pathname, options.sortComments).then(data => {
 			const post = reddit.post(data[0].data.children[0].data)
 
 			const div = createPost(post)
@@ -113,21 +115,20 @@ function main(config) {
 
 			openFullPost(title, content, div.permalink)
 		})
-
-	} else {
-		reddit.requestPosts(options.subreddit, options.sorting).then(posts => {
-
-			//TODO: Create status element
-			if (posts.length === 0) {
-				spinner.style.display = "none"
-				return
-			}
-
-			addPosts(posts)
-			spinner.style.display = "none"
-			brick.pack()
-		})
 	}
+
+	reddit.requestPosts(options.subreddit, options.sortSub).then(posts => {
+
+		//TODO: Create status element
+		if (posts.length === 0) {
+			spinner.style.display = "none"
+			return
+		}
+
+		addPosts(posts)
+		spinner.style.display = "none"
+		brick.pack()
+	})
 }
 
 function addPosts(data) {
@@ -147,7 +148,7 @@ function addPosts(data) {
 	lastChild.addEventListener("enterView", (e) => {
 		observer.unobserve(lastChild)
 
-		reddit.requestPosts(options.subreddit, options.sorting, lastChild.name).then(posts => {
+		reddit.requestPosts(options.subreddit, options.sortSub, lastChild.name).then(posts => {
 			if (posts.length === 0) return
 
 			addPosts(posts)
@@ -184,16 +185,19 @@ function parseUrl(url) {
 	const parts = url.pathname.split('/')
 
 	const result = {
-		subreddit: parts[2],
-		fullPost:  false,
-		sorting:   undefined,
+		subreddit:    parts[2],
+		fullPost:     false,
+		sortSub:      undefined,
+		sortComments: undefined,
 	}
 
 	if (parts[3] === "comments") {
-		result.sorting = url.searchParams.get("sort") ?? reddit.sortMethods.comments[0]
+		result.sortComments = url.searchParams.get("sort") ?? reddit.sortMethods.comments[0]
+		result.sortSub = reddit.sortMethods.subreddit[0]
 		result.fullPost = true
 	} else {
-		result.sorting = reddit.sortMethods.subreddit.includes(parts[3]) ? parts[3] : reddit.sortMethods.subreddit[0]
+		result.sortSub = reddit.sortMethods.subreddit.includes(parts[3]) ? parts[3] : reddit.sortMethods.subreddit[0]
+		result.sortComments = reddit.sortMethods.substring
 	}
 
 	return result
@@ -205,7 +209,7 @@ function search(subreddit, query) {
 	return reddit.requestSearch(query, subreddit).then(posts => {
 		empty(ribbon)
 
-		window.scrollTo(0,0);
+		window.scrollTo({ top: 0, behavior: 'smooth' });
 
 		addPosts(posts)
 
@@ -215,6 +219,16 @@ function search(subreddit, query) {
 
 function openFullPost(title, content, permalink) {
 	openOverlay()
+
+	// TODO: Other elements (extract to loadSource or smth)
+	let img = content.firstChild
+	if (img && img.tagName === "IMG") {
+		delete content.dataset.src
+		lazyload(img, "source", "src")
+	}
+
+	fullPost.insertBefore(content, fullPost.firstChild)
+	fullPost.insertBefore(title, fullPost.firstChild)
 
 	if (comments.loaded !== permalink) {
 		empty(comments)
@@ -233,16 +247,6 @@ function openFullPost(title, content, permalink) {
 		})
 	}
 
-	fullPost.insertBefore(content, fullPost.firstChild)
-	fullPost.insertBefore(title, fullPost.firstChild)
-
-	// TODO:
-	const media = content.firstChild
-	if (media && media.source) {
-		media.src = media.source
-		delete media.source
-	}
-
 	const subTitle = document.title
 	document.title = title.textContent
 
@@ -254,6 +258,9 @@ function openFullPost(title, content, permalink) {
 
 			document.title = subTitle
 			history.pushState(null, subTitle, window.location.pathname.substring(0, window.location.pathname.indexOf("comments") - 1))
+
+			fullPost.removeChild(title)
+			fullPost.removeChild(content)
 
 			resolve()
 		}
@@ -304,7 +311,7 @@ function createContent(post) {
 				thumbnail = post.preview.resolutions.last_or(3).url
 			}
 
-			content.appendChild(createImg(thumbnail, null, source))
+			content.appendChild(createImg(thumbnail, source))
 			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
 
 			break
@@ -365,15 +372,12 @@ function createContent(post) {
 
 			break
 		}
+		// TODO: Placeholder + load button //
 		case "iframe": {
 			content.innerHTML += post.media.oembed.html
 			content.firstChild.dataset.src = content.firstChild.src
 			content.firstChild.src = ""
 			content.firstChild.style.cssText = ""
-			content.firstChild.addEventListener("enterView", (e) => {
-				lazyload(e.target, "src")
-				e.stopPropagation()
-			}, once)
 
 			content.style.height = scale(post.media.oembed.height, post.media.oembed.width, 400) + "px"
 			observer.observe(content.firstChild)
@@ -446,7 +450,7 @@ function createImg(url, source) {
 	const img = document.createElement("img")
 
 	img.dataset.src = url
-	img.source = source
+	img.dataset.source = source
 	img.referrerPolicy = "no-referrer"
 	img.decode = "async"
 
