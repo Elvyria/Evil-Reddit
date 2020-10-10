@@ -48,9 +48,6 @@ function main(config) {
 
 			options.sorting = reddit.sortMethods.subreddit[i]
 
-			spinner.style.display = ""
-			window.scrollTo(0, 0)
-
 			reddit.requestPosts(options.subreddit, options.sorting).then(posts => {
 				empty(ribbon)
 
@@ -60,8 +57,8 @@ function main(config) {
 					return
 				}
 
+				window.scrollTo({ top: 0, behavior: 'smooth' });
 				addPosts(posts)
-				spinner.style.display = "none"
 				brick.pack()
 			})
 		}
@@ -90,8 +87,8 @@ function main(config) {
 	// TODO: History states
 	// window.addEventListener("popstate", (e) => {})
 
-	searchInput.addEventListener("keypress", e => {
-		if (e.key === 13) {
+	searchInput.addEventListener("keydown", e => {
+		if (e.key === "Enter") {
 			search(options.subreddit, searchInput.value).then(brick.pack)
 
 			//TODO: History states
@@ -134,6 +131,8 @@ function main(config) {
 }
 
 function addPosts(data) {
+	if (data.length === 0) return
+
 	const frag = document.createDocumentFragment()
 
 	data.forEach(child => {
@@ -145,7 +144,7 @@ function addPosts(data) {
 
 	const lastChild = frag.lastChild
 
-	lastChild.addEventListener("enterView", () => {
+	lastChild.addEventListener("enterView", (e) => {
 		observer.unobserve(lastChild)
 
 		reddit.requestPosts(options.subreddit, options.sorting, lastChild.name).then(posts => {
@@ -154,6 +153,8 @@ function addPosts(data) {
 			addPosts(posts)
 			brick.update()
 		})
+
+		e.stopPropagation()
 	}, once)
 
 	observer.observe(lastChild)
@@ -320,7 +321,7 @@ function createContent(post) {
 			break
 		}
 		case "gallery": {
-			const images = post.gallery.map(img => wrap(createImg(img.p.last_or(3).u, img.p[0].u, img.s.u), "li"))
+			const images = post.gallery.map(img => wrap(createImg(img.p.last_or(3).u, img.s.u), "li"))
 
 			content.appendChild(createAlbum(images))
 			content.style.height = scale(post.gallery[0].s.y, post.gallery[0].s.x, 400) + "px"
@@ -382,14 +383,12 @@ function createContent(post) {
 		case "link": {
 			if (post.preview) {
 				let previewURL = post.preview.source.url
-				let placeholderURL = post.thumbnail.url
 
 				if (post.preview.resolutions.length > 0) {
 					previewURL = post.preview.resolutions.last_or(3).url
-					placeholderURL = post.preview.resolutions[0].url
 				}
 
-				content.appendChild(createLink(post.url, createImg(previewURL, placeholderURL)))
+				content.appendChild(createLink(post.url, createImg(previewURL)))
 				content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
 
 			} else content.appendChild(createLink(post.url))
@@ -443,24 +442,13 @@ function createFlair(text, fg, bg) {
 	return flair
 }
 
-function createImg(url, placeholder, source) {
+function createImg(url, source) {
 	const img = document.createElement("img")
-
-	if (placeholder) {
-		img.src = placeholder
-		img.className = "blur-up"
-	}
 
 	img.dataset.src = url
 	img.source = source
 	img.referrerPolicy = "no-referrer"
-	img.decoding = "async"
-
-	img.addEventListener("enterView", (e) => {
-		lazyload(e.target, "src")
-		e.target.classList.remove("blur-up")
-		e.stopPropagation()
-	}, once)
+	img.decode = "async"
 
 	observer.observe(img)
 

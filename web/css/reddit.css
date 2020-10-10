@@ -19,7 +19,7 @@
 	animation: spinner 1.4s infinite linear;
 }
 
-#spinner:before {
+#spinner::before {
 	content: '';
 	width: 50%;
 	height: 50%;
@@ -30,7 +30,7 @@
 	left: 0;
 }
 
-#spinner:after {
+#spinner::after {
 	content: '';
 	width: 95%;
 	height: 95%;
@@ -60,23 +60,19 @@ body::-webkit-scrollbar {
 	width: 1em;
 }
 
-img {
+.post-content > img {
 	opacity: 0;
-	transition-duration: 1s;
 }
 
-img[src] {
+.post-content > img.lazyloaded {
+	transition-duration: 1s;
 	opacity: 1;
 }
 
 /* Hidden until redesign */
 #search {
-	display: none;
-	position: absolute;
-	top: 0;
-	left: 50%;
-	transform: translateX(-50%);
-
+	width: max-content;
+	margin: auto;
 }
 
 #search > input {
@@ -132,6 +128,7 @@ img[src] {
 	border: 1px solid transparent;
 	border-radius: 4px;
 	width: 400px;
+	contain: content;
 }
 
 .ribbon-post:hover {
