@@ -4,8 +4,9 @@
 </p>
 
 ## Overview
-Self hosted reddit viewer created to replace slow and bloated [reddit.com](https://www.reddit.com) with something faster.  
-Demo: https://evil-reddit.web.app/r/unixporn
+Self hosted reddit viewer created to replace slow and bloated [reddit.com](https://www.reddit.com) with something faster.
+
+Demo: https://evil-reddit.web.app/r/unixporn (usually outdated and buggy, don't recommend as daily driver)
 
 <img src="./preview.jpg">
 
@@ -19,11 +20,11 @@ yarn product
 
 Build or start server from root directory
 ```
-go build
+go build -ldflags="-s -w" main.go
 ```
 or
 ```
-go run main.go
+go start main.go
 ```
 
 Open browser and visit `127.0.0.1:3006/r/unixporn`, enjoy.
