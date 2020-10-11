@@ -60,11 +60,11 @@ body::-webkit-scrollbar {
 	width: 1em;
 }
 
-.post-content > img {
+.post-content img {
 	opacity: 0;
 }
 
-.post-content > img.lazyloaded {
+.post-content img.lazyloaded {
 	transition-duration: 1s;
 	opacity: 1;
 }
@@ -120,6 +120,7 @@ body::-webkit-scrollbar {
 }
 
 .ribbon-post {
+	position: absolute;
 	display: flex;
 	flex-direction: column;
 	background-color: rgb(26, 26, 27);

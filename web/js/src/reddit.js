@@ -32,7 +32,7 @@ const brick = Bricks(
 		],
 		position: false
 	}
-).resize(true)
+).resize(true).pack()
 
 loadConfig("/config.json").then(main)
 
@@ -62,7 +62,6 @@ function main(config) {
 				}
 
 				addPosts(posts)
-				brick.pack()
 			})
 		}
 	})
@@ -92,7 +91,7 @@ function main(config) {
 
 	searchInput.addEventListener("keydown", e => {
 		if (e.key === "Enter") {
-			search(options.subreddit, searchInput.value).then(brick.pack)
+			search(options.subreddit, searchInput.value)
 
 			//TODO: History states
 			// history.pushState(null, "", `/r/${options.subreddit}/search?q=${searchInput.value}`)
@@ -128,7 +127,6 @@ function main(config) {
 
 		addPosts(posts)
 		spinner.style.display = "none"
-		brick.pack()
 	})
 }
 
@@ -149,12 +147,7 @@ function addPosts(data) {
 	lastChild.addEventListener("enterView", (e) => {
 		observer.unobserve(lastChild)
 
-		reddit.requestPosts(options.subreddit, options.sortSub, lastChild.name).then(posts => {
-			if (posts.length === 0) return
-
-			addPosts(posts)
-			brick.update()
-		})
+		reddit.requestPosts(options.subreddit, options.sortSub, lastChild.name).then(addPosts)
 
 		e.stopPropagation()
 	}, once)
@@ -162,6 +155,8 @@ function addPosts(data) {
 	observer.observe(lastChild)
 
 	ribbon.appendChild(frag)
+
+	brick.update()
 }
 
 function clickPost(event) {
@@ -362,7 +357,6 @@ function createContent(post) {
 				redgifs(post.url).then(urls => {
 					video.addSource(urls.sd, "video/mp4")
 					video.addSource(urls.hd, "video/mp4")
-					video.load()
 				})
 
 				e.stopPropagation()
