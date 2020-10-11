@@ -1,0 +1,164 @@
+diff --git a/dist/bricks.module.js b/dist/bricks.module.js
+index fc1a3a38bd531bc0c4c90c397579075ec56d2e4d..f940d976fd21f56fe1d582e746369c102638a4cd 100644
+--- a/dist/bricks.module.js
++++ b/dist/bricks.module.js
+@@ -1,8 +1,8 @@
+-var _extends = Object.assign || function (target) {
+-  for (var i = 1; i < arguments.length; i++) {
+-    var source = arguments[i];
++const _extends = Object.assign || function (target) {
++  for (const i = 1; i < arguments.length; i++) {
++    let source = arguments[i];
+ 
+-    for (var key in source) {
++    for (const key in source) {
+       if (Object.prototype.hasOwnProperty.call(source, key)) {
+         target[key] = source[key];
+       }
+@@ -12,10 +12,10 @@ var _extends = Object.assign || function (target) {
+   return target;
+ };
+ 
+-var knot = function knot() {
+-  var extended = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
++const knot = function knot() {
++  const extended = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+ 
+-  var events = Object.create(null);
++  const events = Object.create(null);
+ 
+   function on(name, handler) {
+     events[name] = events[name] || [];
+@@ -30,7 +30,7 @@ var knot = function knot() {
+   }
+ 
+   function off(name) {
+-    var handler = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
++    let handler = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+ 
+     handler ? events[name].splice(events[name].indexOf(handler), 1) : delete events[name];
+ 
+@@ -38,14 +38,14 @@ var knot = function knot() {
+   }
+ 
+   function emit(name) {
+-    var _this = this;
++    const _this = this;
+ 
+-    for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
++    for (let _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+       args[_key - 1] = arguments[_key];
+     }
+ 
+     // cache the events, to avoid consequences of mutation
+-    var cache = events[name] && events[name].slice();
++    const cache = events[name] && events[name].slice();
+ 
+     // only fire handlers if they exist
+     cache && cache.forEach(function (handler) {
+@@ -68,38 +68,38 @@ var knot = function knot() {
+   });
+ };
+ 
+-var bricks = function bricks() {
+-  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
++const bricks = function bricks() {
++  const options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+ 
+   // privates
+ 
+-  var persist = void 0; // packing new elements, or all elements?
+-  var ticking = void 0; // for debounced resize
++  let persist = void 0; // packing new elements, or all elements?
++  let ticking = void 0; // for debounced resize
+ 
+-  var sizeIndex = void 0;
+-  var sizeDetail = void 0;
++  let sizeIndex = void 0;
++  let sizeDetail = void 0;
+ 
+-  var columnTarget = void 0;
+-  var columnHeights = void 0;
++  let columnTarget = void 0;
++  let columnHeights = void 0;
+ 
+-  var nodeTop = void 0;
+-  var nodeLeft = void 0;
+-  var nodeWidth = void 0;
+-  var nodeHeight = void 0;
++  let nodeTop = void 0;
++  let nodeLeft = void 0;
++  let nodeWidth = void 0;
++  let nodeHeight = void 0;
+ 
+-  var nodes = void 0;
+-  var nodesWidths = void 0;
+-  var nodesHeights = void 0;
++  let nodes = void 0;
++  let nodesWidths = void 0;
++  let nodesHeights = void 0;
+ 
+   // resolve options
+ 
+-  var packed = options.packed.indexOf('data-') === 0 ? options.packed : 'data-' + options.packed;
+-  var sizes = options.sizes.slice().reverse();
+-  var position = options.position !== false;
++  const packed = options.packed.indexOf('data-') === 0 ? options.packed : 'data-' + options.packed;
++  const sizes = options.sizes.slice().reverse();
++  const position = options.position !== false;
+ 
+-  var container = options.container.nodeType ? options.container : document.querySelector(options.container);
++  const container = options.container.nodeType ? options.container : document.querySelector(options.container);
+ 
+-  var selectors = {
++  const selectors = {
+     all: function all() {
+       return toArray(container.children);
+     },
+@@ -112,13 +112,13 @@ var bricks = function bricks() {
+ 
+   // series
+ 
+-  var setup = [setSizeIndex, setSizeDetail, setColumns];
++  const setup = [setSizeIndex, setSizeDetail, setColumns];
+ 
+-  var run = [setNodes, setNodesDimensions, setNodesStyles, setContainerStyles];
++  const run = [setNodes, setNodesDimensions, setNodesStyles, setContainerStyles];
+ 
+   // instance
+ 
+-  var instance = knot({
++  const instance = knot({
+     pack: pack,
+     update: update,
+     resize: resize
+@@ -137,8 +137,6 @@ var bricks = function bricks() {
+   // array helpers
+ 
+   function toArray(input) {
+-    var scope = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : document;
+-
+     return Array.prototype.slice.call(input);
+   }
+ 
+@@ -196,8 +194,6 @@ var bricks = function bricks() {
+     nodes.forEach(function (element, index) {
+       columnTarget = columnHeights.indexOf(Math.min.apply(Math, columnHeights));
+ 
+-      element.style.position = 'absolute';
+-
+       nodeTop = columnHeights[columnTarget] + 'px';
+       nodeLeft = columnTarget * nodesWidths[index] + columnTarget * sizeDetail.gutter + 'px';
+ 
+@@ -264,9 +260,9 @@ var bricks = function bricks() {
+   }
+ 
+   function resize() {
+-    var flag = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
++    const flag = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+ 
+-    var action = flag ? 'addEventListener' : 'removeEventListener';
++    const action = flag ? 'addEventListener' : 'removeEventListener';
+ 
+     window[action]('resize', resizeFrame);
+ 

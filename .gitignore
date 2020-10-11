@@ -1,7 +1,10 @@
-/server.exe
-/server
-web/assets/background.png
-web/js/*.js
-web/.pnp
-web/.pnp.js
-node_modules
+/server*
+/web/assets/background.png
+/web/js/*.js
+
+/web/.yarn/*
+!/web/.yarn/releases
+!/web/.yarn/plugins
+!/web/.yarn/sdks
+!/web/.yarn/versions
+/web/.pnp.*
