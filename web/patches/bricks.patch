@@ -7,8 +7,8 @@ index fc1a3a38bd531bc0c4c90c397579075ec56d2e4d..f940d976fd21f56fe1d582e746369c10
 -  for (var i = 1; i < arguments.length; i++) {
 -    var source = arguments[i];
 +const _extends = Object.assign || function (target) {
-+  for (const i = 1; i < arguments.length; i++) {
-+    let source = arguments[i];
++  for (let i = 1; i < arguments.length; i++) {
++    const source = arguments[i];
  
 -    for (var key in source) {
 +    for (const key in source) {
