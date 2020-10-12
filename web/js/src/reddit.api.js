@@ -2,7 +2,8 @@ export let reddit = {}
 
 reddit.sortMethods = {
 	subreddit: ["hot", "new", "top", "rising"],
-	comments:  ["confidence", "top", "new", "controversial", "old", "qa"]
+	comments:  ["confidence", "top", "new", "controversial", "old", "qa"],
+	search:    ["relevance", "hot", "top", "new", "comments"],
 }
 
 reddit.requestPosts = (subreddit, sort, after = "", limit = "100") => {
@@ -106,10 +107,6 @@ reddit.hint = (post) => {
 	else if (post.html)
 	{
 		return "html"
-	}
-	else if (post.url.endsWith(".gif"))
-	{
-		return "gif"
 	}
 	else if (!post.url.includes(post.permalink))
 	{

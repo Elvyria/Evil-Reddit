@@ -8,17 +8,9 @@ function observe(entries, _observer) {
 		const el = entry.target
 
 		if (entry.isIntersecting)
-		{
-			switch (el.tagName) {
-				case "IFRAME":
-				case "IMG":
-					lazyload(el, "src")
-					break
-				default:
-					el.dispatchEvent(enterView)
-			}
-		}
-		else el.dispatchEvent(exitView)
+			el.dispatchEvent(enterView)
+		else
+			el.dispatchEvent(exitView)
 	})
 }
 
@@ -32,6 +24,5 @@ export function lazyload(element, data, attr) {
 			element[data] = element.dataset[data]
 
 		delete element.dataset[data]
-		element.classList.add("lazyloaded")
 	}
 }

@@ -38,7 +38,7 @@ loadConfig("/config.json").then(main)
 
 function main(config) {
 
-	window.scrollTo({ top: 0, behavior: 'smooth' });
+	window.scrollTo({ top: 0, behavior: 'smooth' })
 
 	options = parseUrl(new URL(window.location.href))
 
@@ -50,18 +50,18 @@ function main(config) {
 
 			options.sortSub = reddit.sortMethods.subreddit[i]
 
-			window.scrollTo({ top: 0, behavior: 'smooth' });
+			window.scrollTo({ top: 0, behavior: 'smooth' })
 
-			reddit.requestPosts(options.subreddit, options.sortSub).then(posts => {
-				empty(ribbon)
-
+			reddit.requestPosts(subreddit, sort, "", 100).then(posts => {
 				//TODO: Create status element
 				if (posts.length === 0) {
-					spinner.style.display = "none"
 					return
 				}
 
-				addPosts(posts)
+				empty(ribbon)
+
+				const more = posts.length === 100 ? (after) => reddit.requestPosts(options.subreddit, options.sortSub, after) : null
+				addPosts(posts, more)
 			})
 		}
 	})
@@ -91,10 +91,25 @@ function main(config) {
 
 	searchInput.addEventListener("keydown", e => {
 		if (e.key === "Enter") {
-			search(options.subreddit, searchInput.value)
+			const query = searchInput.value.trim()
 
-			//TODO: History states
-			// history.pushState(null, "", `/r/${options.subreddit}/search?q=${searchInput.value}`)
+			if (query.length !== 0)
+			{
+				search(options.subreddit, query)
+				history.pushState(null, "", `/r/${options.subreddit}/search/?q=${searchInput.value}`)
+			}
+			else
+			{
+				reddit.requestPosts(options.subreddit, options.sortSub).then(posts => {
+					if (posts.length === 0) return
+
+					empty(ribbon)
+
+					const more = posts.length === 100 ? (after) => reddit.requestPosts(options.subreddit, options.sortSub, after) : null
+					addPosts(posts, more)
+				})
+				history.pushState(null, "", `/r/${options.subreddit}`)
+			}
 		}
 	})
 
@@ -118,19 +133,20 @@ function main(config) {
 	}
 
 	reddit.requestPosts(options.subreddit, options.sortSub).then(posts => {
+		hide(spinner)
 
 		//TODO: Create status element
-		if (posts.length === 0) {
-			spinner.style.display = "none"
-			return
-		}
+		if (posts.length === 0) return
 
-		addPosts(posts)
-		spinner.style.display = "none"
+		const more = posts.length === 100 ? (after) => reddit.requestPosts(options.subreddit, options.sortSub, after) : null
+		addPosts(posts, more)
 	})
 }
 
-function addPosts(data) {
+function requestPosts() {
+}
+
+function addPosts(data, more) {
 	if (data.length === 0) return
 
 	const frag = document.createDocumentFragment()
@@ -142,21 +158,28 @@ function addPosts(data) {
 		frag.appendChild(div)
 	})
 
-	const lastChild = frag.lastChild
+	if (more) {
+		const lastChild = frag.lastChild
 
-	lastChild.addEventListener("enterView", (e) => {
-		observer.unobserve(lastChild)
+		lastChild.addEventListener("enterView", (e) => {
+			observer.unobserve(lastChild)
 
-		reddit.requestPosts(options.subreddit, options.sortSub, lastChild.name).then(addPosts)
+			more(lastChild.name).then(addPosts, more)
 
-		e.stopPropagation()
-	}, once)
+			e.stopPropagation()
+		}, once)
 
-	observer.observe(lastChild)
+		observer.observe(lastChild)
+	}
+
+	const empty = ribbon.children.length === 0
 
 	ribbon.appendChild(frag)
 
-	brick.update()
+	if (empty)
+		brick.pack()
+	else
+		brick.update()
 }
 
 function clickPost(event) {
@@ -164,7 +187,7 @@ function clickPost(event) {
 
 	if (!post) return
 
-	post.style.display = "none"
+	hide(post)
 
 	const title = post.getElementsByClassName("post-title")[0]
 	const content = post.getElementsByClassName("post-content")[0]
@@ -173,7 +196,7 @@ function clickPost(event) {
 		post.appendChild(title)
 		post.appendChild(content)
 
-		post.style.display = ""
+		show(post)
 	})
 }
 
@@ -200,16 +223,13 @@ function parseUrl(url) {
 }
 
 function search(subreddit, query) {
-	spinner.style.display = ""
-
-	return reddit.requestSearch(query, subreddit).then(posts => {
+	return reddit.requestSearch(query, subreddit, "", "", 100).then(posts => {
 		empty(ribbon)
 
-		window.scrollTo({ top: 0, behavior: 'smooth' });
+		window.scrollTo({ top: 0, behavior: 'smooth' })
 
-		addPosts(posts)
-
-		spinner.style.display = "none"
+		const more = posts.length === 100 ? (after) => reddit.requestSearch(query, subreddit, "", after) : null
+		addPosts(posts, more)
 	})
 }
 
@@ -265,9 +285,9 @@ function openFullPost(title, content, permalink) {
 
 function addComment(fragment, data, level = 0) {
 	const comment = createComment(data.author, data.body_html, ago(new Date(data.created_utc * 1000)))
-	comment.style.paddingLeft = 21 * level + "px";
+	comment.style.paddingLeft = 21 * level + "px"
 	fragment.appendChild(comment)
-	setTimeout(e => e.style.opacity = 1, 15 * fragment.children.length, comment);
+	setTimeout(e => e.style.opacity = 1, 15 * fragment.children.length, comment)
 
 	if (data.replies) {
 		data.replies.data.children.forEach(child => addComment(fragment, child.data, level + 1))
@@ -313,12 +333,12 @@ function createContent(post) {
 			break
 		}
 		case "gif": {
-			let url = post.preview.variants.mp4.source.url
+			let urls = { hd: post.preview.variants.mp4.source.url }
 
 			if (post.preview.variants.mp4.resolutions.length > 0)
-				url = post.preview.variants.mp4.resolutions.last_or(3).url
+			urls.sd = post.preview.variants.mp4.resolutions.last_or(3).url
 
-			content.appendChild(createVideo({ sd: url }))
+			content.appendChild(createVideo(urls))
 			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
 
 			break
@@ -449,6 +469,13 @@ function createImg(url, source) {
 	img.referrerPolicy = "no-referrer"
 	img.decoding = "async"
 
+	img.addEventListener("enterView", (e) => {
+		lazyload(img, "src")
+		img.decode().then(() => img.classList.add("lazyloaded"))
+
+		e.stopPropagation()
+	}, once)
+
 	observer.observe(img)
 
 	return img
@@ -505,9 +532,9 @@ function createAlbum(images) {
 	left.onclick = (e) => {
 		if (current > 0) {
 			centerInList(collection.children, --current)
-			right.style.display = ""
+			show(right)
 			if (current === 0)
-				left.style.display = "none"
+				hide(left)
 		}
 
 		e.stopPropagation()
@@ -516,9 +543,9 @@ function createAlbum(images) {
 	right.onclick = (e) => {
 		if (current + 1 < collection.children.length) {
 			centerInList(collection.children, ++current)
-			left.style.display = ""
+			show(left)
 			if (current === collection.children.length - 1)
-				right.style.display = "none"
+				hide(right)
 		}
 
 		e.stopPropagation()
@@ -557,6 +584,14 @@ function ago(date) {
 	return result(Math.floor(n / 365), " year")
 }
 
+function hide(elem) {
+	elem.style.display = "none"
+}
+
+function show(elem) {
+	elem.style.display = ""
+}
+
 function loadConfig(path) {
 	return fetch(path).then(resp => resp.json())
 }
@@ -573,17 +608,17 @@ function wrap(e, tag = "div") {
 
 function empty(elem) {
 	while (elem.firstChild)
-		elem.removeChild(elem.firstChild)
+		elem.removeChild(elem.lastChild)
 }
 
 function openOverlay() {
-	overlay.style.display   = ""
-	fullPost.style.display = ""
+	show(overlay)
+	show(fullPost)
 	document.body.style.overflow = "hidden"
 }
 
 function closeOverlay() {
-	overlay.style.display   = "none"
-	fullPost.style.display = "none"
+	hide(overlay)
+	hide(fullPost)
 	document.body.style.overflow  = ""
 }
