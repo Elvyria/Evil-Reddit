@@ -60,7 +60,7 @@ function main(config) {
 
 				empty(ribbon)
 
-				const more = posts.length === 100 ? (after) => reddit.requestPosts(options.subreddit, options.sortSub, after) : null
+				const more = posts.length >= 100 ? (after) => reddit.requestPosts(options.subreddit, options.sortSub, after) : null
 				addPosts(posts, more)
 			})
 		}
@@ -105,7 +105,7 @@ function main(config) {
 
 					empty(ribbon)
 
-					const more = posts.length === 100 ? (after) => reddit.requestPosts(options.subreddit, options.sortSub, after) : null
+					const more = posts.length >= 100 ? (after) => reddit.requestPosts(options.subreddit, options.sortSub, after) : null
 					addPosts(posts, more)
 				})
 				history.pushState(null, "", `/r/${options.subreddit}`)
@@ -138,7 +138,7 @@ function main(config) {
 		//TODO: Create status element
 		if (posts.length === 0) return
 
-		const more = posts.length === 100 ? (after) => reddit.requestPosts(options.subreddit, options.sortSub, after) : null
+		const more = posts.length >= 100 ? (after) => reddit.requestPosts(options.subreddit, options.sortSub, after) : null
 		addPosts(posts, more)
 	})
 }
@@ -228,7 +228,7 @@ function search(subreddit, query) {
 
 		window.scrollTo({ top: 0, behavior: 'smooth' })
 
-		const more = posts.length === 100 ? (after) => reddit.requestSearch(query, subreddit, "", after) : null
+		const more = posts.length >= 100 ? (after) => reddit.requestSearch(query, subreddit, "", after) : null
 		addPosts(posts, more)
 	})
 }
