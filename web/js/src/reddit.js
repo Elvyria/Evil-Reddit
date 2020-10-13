@@ -164,7 +164,7 @@ function addPosts(data, more) {
 		lastChild.addEventListener("enterView", (e) => {
 			observer.unobserve(lastChild)
 
-			more(lastChild.name).then(addPosts, more)
+			more(lastChild.name).then(posts => addPosts(posts, more))
 
 			e.stopPropagation()
 		}, once)
