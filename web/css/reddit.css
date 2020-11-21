@@ -90,10 +90,22 @@ body::-webkit-scrollbar {
 	position: fixed;
 	top: 0;
 	bottom: 0;
-	left: 30px;
+	left: -60px;
 	margin: auto;
-	height: 200px;
+	height: 175px;
 	color: gray;
+	background-color: rgb(26, 26, 27);
+	padding: 20px;
+
+	border-radius: 10px;
+	border-right: 2px solid #404040;
+
+	transition: left 300ms;
+	z-index: 1;
+}
+
+#sorting:hover {
+	left: 0;
 }
 
 #sorting > div {
@@ -129,6 +141,8 @@ body::-webkit-scrollbar {
 	border: 1px solid transparent;
 	border-radius: 4px;
 	width: 400px;
+	transition-duration: 400ms;
+	transition-property: border;
 	contain: content;
 }
 
