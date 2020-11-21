@@ -97,7 +97,7 @@ body::-webkit-scrollbar {
 	background-color: rgb(26, 26, 27);
 	padding: 20px;
 
-	border-radius: 10px;
+	border-radius: 0 10px 10px 0;
 	border-right: 2px solid #404040;
 
 	transition: left 300ms;
@@ -180,6 +180,7 @@ body::-webkit-scrollbar {
 }
 
 .post-content {
+	position: relative;
 	width: 100%;
 	margin: 8px auto 0 auto;
 	overflow: hidden;
@@ -189,6 +190,26 @@ body::-webkit-scrollbar {
 	height: 100%;
 	width: 100%;
 	object-fit: contain;
+}
+
+.post-content > iframe {
+	border: none;
+}
+
+.iframe-loader {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: flex;
+	justify-content: center;
+	cursor: default;
+}
+
+.iframe-loader > span {
+	color: white;
+	font-family: "Nerd Font";
+	font-size: 2em;
+	align-self: center;
 }
 
 .external-link {

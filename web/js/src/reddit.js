@@ -38,6 +38,8 @@ loadConfig("/config.json").then(main)
 
 function main(config) {
 
+	hotkeys()
+
 	window.scrollTo({ top: 0, behavior: 'smooth' })
 
 	options = parseUrl(new URL(window.location.href))
@@ -52,7 +54,7 @@ function main(config) {
 
 			window.scrollTo({ top: 0, behavior: 'smooth' })
 
-			reddit.requestPosts(subreddit, sort, "", 100).then(posts => {
+			reddit.requestPosts(options.subreddit, options.sortSub, "", 100).then(posts => {
 				//TODO: Create status element
 				if (posts.length === 0) {
 					return
@@ -143,7 +145,14 @@ function main(config) {
 	})
 }
 
-function requestPosts() {
+function hotkeys() {
+	document.addEventListener("keydown", e => {
+
+		switch (e.keyCode) {
+			case 191: { // ?
+			}
+		}
+	})
 }
 
 function addPosts(data, more) {
@@ -165,8 +174,6 @@ function addPosts(data, more) {
 			observer.unobserve(lastChild)
 
 			more(lastChild.name).then(posts => addPosts(posts, more))
-
-			e.stopPropagation()
 		}, once)
 
 		observer.observe(lastChild)
@@ -184,6 +191,8 @@ function addPosts(data, more) {
 
 function clickPost(event) {
 	const post = event.target.closest(".ribbon-post")
+
+	console.log("Clicked post")
 
 	if (!post) return
 
@@ -378,8 +387,6 @@ function createContent(post) {
 					video.addSource(urls.sd, "video/mp4")
 					video.addSource(urls.hd, "video/mp4")
 				})
-
-				e.stopPropagation()
 			}, once)
 
 			content.appendChild(video)
@@ -387,15 +394,13 @@ function createContent(post) {
 
 			break
 		}
-		// TODO: Placeholder + load button //
 		case "iframe": {
-			content.innerHTML += post.media.oembed.html
-			content.firstChild.dataset.src = content.firstChild.src
-			content.firstChild.src = ""
-			content.firstChild.style.cssText = ""
+			const div = document.createElement("div")
+			div.innerHTML = post.media.oembed.html
+
+			content.appendChild(createIframe(div.firstElementChild.src))
 
 			content.style.height = scale(post.media.oembed.height, post.media.oembed.width, 400) + "px"
-			observer.observe(content.firstChild)
 
 			break
 		}
@@ -426,6 +431,34 @@ function createContent(post) {
 	}
 
 	return content
+}
+
+function createIframe(src) {
+	const iframe = document.createElement("iframe")
+	iframe.dataset.src = src
+	iframe.referrerPolicy = "no-referrer"
+	iframe.allowfullscreen = true
+
+	const loader = document.createElement("div")
+	loader.className = "iframe-loader"
+
+	const icon = document.createElement("span")
+	icon.innerText = "勒"
+
+	loader.appendChild(icon)
+
+	loader.addEventListener("click", (e) => {
+		lazyload(iframe, "src")
+		loader.remove()
+
+		e.stopPropagation()
+	})
+
+	const result = document.createDocumentFragment()
+	result.appendChild(loader)
+	result.appendChild(iframe)
+
+	return result
 }
 
 function createComment(author, html, date) {
@@ -472,8 +505,6 @@ function createImg(url, source) {
 	img.addEventListener("enterView", (e) => {
 		lazyload(img, "src")
 		img.decode().then(() => img.classList.add("lazyloaded"))
-
-		e.stopPropagation()
 	}, once)
 
 	observer.observe(img)
@@ -609,6 +640,11 @@ function wrap(e, tag = "div") {
 function empty(elem) {
 	while (elem.firstChild)
 		elem.removeChild(elem.lastChild)
+}
+
+function showSearch() {
+	show(overlay)
+	document.body.style.overflow = "hidden"
 }
 
 function openOverlay() {
