@@ -65,6 +65,8 @@ function main(config) {
 				const more = posts.length >= 100 ? (after) => reddit.requestPosts(options.subreddit, options.sortSub, after) : null
 				addPosts(posts, more)
 			})
+
+			history.pushState(null, "", `/r/${options.subreddit}/${options.sortSub}`)
 		}
 	})
 
@@ -191,8 +193,6 @@ function addPosts(data, more) {
 
 function clickPost(event) {
 	const post = event.target.closest(".ribbon-post")
-
-	console.log("Clicked post")
 
 	if (!post) return
 
@@ -439,6 +439,7 @@ function createIframe(src) {
 	iframe.referrerPolicy = "no-referrer"
 	iframe.allowfullscreen = true
 
+
 	const loader = document.createElement("div")
 	loader.className = "iframe-loader"
 
@@ -448,8 +449,14 @@ function createIframe(src) {
 	loader.appendChild(icon)
 
 	loader.addEventListener("click", (e) => {
-		lazyload(iframe, "src")
-		loader.remove()
+		iframe.src = iframe.dataset.src
+		hide(loader)
+
+		observer.observe(iframe)
+		iframe.addEventListener("exitView", (e) => {
+			iframe.src = ""
+			show(loader)
+		}, once)
 
 		e.stopPropagation()
 	})
