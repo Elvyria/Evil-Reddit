@@ -353,9 +353,9 @@ function createContent(post) {
 			break
 		}
 		case "gallery": {
-			const images = post.gallery.map(img => wrap(createImg(img.p.last_or(3).u, img.s.u), "li"))
+			const elements = post.gallery.map(entry => createGalleryElement(entry))
 
-			content.appendChild(createAlbum(images))
+			content.appendChild(createAlbum(elements))
 			content.style.height = scale(post.gallery[0].s.y, post.gallery[0].s.x, 400) + "px"
 
 			break
@@ -431,6 +431,23 @@ function createContent(post) {
 	}
 
 	return content
+}
+
+function createGalleryElement(entry) {
+	let element
+
+	switch (entry.m) {
+		case "image/gif":
+			element = entry.p.length === 0 ?
+				createImg(entry.s.gif) : createVideo({ sd: entry.s.mp4 })
+
+			break
+		default:
+			element = entry.p.length === 0 ?
+				createImg(entry.s.u) : createImg(entry.p.last_or(3).u, entry.s.u)
+	}
+
+	return wrap(element, "li")
 }
 
 function createIframe(src) {
