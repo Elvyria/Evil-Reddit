@@ -2,15 +2,16 @@ export let reddit = {}
 
 reddit.sortMethods = {
 	subreddit: ["hot", "new", "top", "rising"],
+	time:      ["hour", "day", "week", "month", "year", "all"],
 	comments:  ["confidence", "top", "new", "controversial", "old", "qa"],
 	search:    ["relevance", "hot", "top", "new", "comments"],
 }
 
-reddit.requestPosts = (subreddit, sort, after = "", limit = "100") => {
+reddit.requestPosts = (subreddit, sort, after = "", limit = "100", time = "") => {
 	if (!reddit.sortMethods.subreddit.includes(sort))
 		sort = reddit.sortMethods.subreddit[0]
 
-	const url = `https://www.reddit.com/r/${subreddit}/${sort}/.json?after=${after}&limit=${limit}&raw_json=1`;
+	const url = `https://www.reddit.com/r/${subreddit}/${sort}/.json?after=${after}&limit=${limit}&t=${time}&raw_json=1`;
 
 	return fetch(url)
 		.then(resp => resp.json())
@@ -34,8 +35,8 @@ reddit.requestAbout = (subreddit) => {
 		.then(json => json.data)
 }
 
-reddit.requestSearch = (query, subreddit = "", sort = "", after = "", limit = "100") => {
-	const url = `https://www.reddit.com/r/${subreddit}/search/.json?q=${query}&after=${after}&restrict_sr=1&limit=${limit}&include_over_18=on&raw_json=1`
+reddit.requestSearch = (query, subreddit = "", sort = "", after = "", limit = "100", time = "") => {
+	const url = `https://www.reddit.com/r/${subreddit}/search/.json?q=${query}&after=${after}&restrict_sr=1&limit=${limit}&t=${time}&include_over_18=on&raw_json=1`
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.data.children)
@@ -51,12 +52,13 @@ reddit.requestSearchNames = (query, exact = false) => {
 reddit.post = (data) => {
 	const post = {
 		name:      data.name,
+		score:     data.score,
 		permalink: data.permalink,
 		title:     data.title,
 		hint:      data.post_hint,
 		html:      data.selftext_html,
 		preview:   data.preview ? data.preview.images[0] : undefined,
-		gallery:   data.is_gallery ? Object.values(data.media_metadata) : undefined,
+		gallery:   data.is_gallery ? Object.values(data.media_metadata).filter(entry => entry.status === "valid") : undefined,
 		media:     data.media && data.media.reddit_video ? reddit.media(data.media.reddit_video) : data.media,
 		url:       data.url,
 		thumbnail: {

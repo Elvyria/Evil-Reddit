@@ -23,7 +23,7 @@ let options
 const brick = Bricks(
 	{
 		container: ribbon,
-		packed: 'data-packed',
+		packed: 'bricked',
 		sizes: [
 			{               columns: 1, gutter: 10 },
 			{ mq: "800px",  columns: 2, gutter: 10 },
@@ -32,7 +32,7 @@ const brick = Bricks(
 		],
 		position: false
 	}
-).resize(true).pack()
+).pack()
 
 loadConfig("/config.json").then(main)
 
@@ -69,24 +69,6 @@ function main(config) {
 			history.pushState(null, "", `/r/${options.subreddit}/${options.sortSub}`)
 		}
 	})
-
-	const zoom = (event) => {
-		const content = fullPost.getElementsByClassName("post-content")[0]
-		const img = event.target
-
-		if (content.firstChild === img && img.tagName === "IMG" && img.naturalHeight > img.naturalWidth) {
-			if (img.classList.contains("zoom-in"))
-			{
-				content.style.overflowY = ''
-				img.classList.remove("zoom-in")
-			}
-			else
-			{
-				content.style.overflowY = "scroll"
-				img.classList.add("zoom-in")
-			}
-		}
-	}
 
 	fullPost.addEventListener("click", zoom)
 
@@ -147,14 +129,31 @@ function main(config) {
 	})
 }
 
-function hotkeys() {
-	document.addEventListener("keydown", e => {
+function zoom(event) {
+	const content = fullPost.getElementsByClassName("post-content")[0]
+	const img = event.target
 
-		switch (e.keyCode) {
-			case 191: { // ?
-			}
+	if (content.firstChild === img && img.tagName === "IMG" && img.naturalHeight > img.naturalWidth) {
+		if (img.classList.contains("zoom-in"))
+		{
+			content.style.overflowY = ""
+			img.classList.remove("zoom-in")
 		}
-	})
+		else
+		{
+			content.style.overflowY = "scroll"
+			img.classList.add("zoom-in")
+		}
+	}
+}
+
+function hotkeys() {
+	// document.addEventListener("keydown", e => {
+		// switch (e.code) {
+			// case "Key?": {
+			// }
+		// }
+	// })
 }
 
 function addPosts(data, more) {
@@ -162,12 +161,23 @@ function addPosts(data, more) {
 
 	const frag = document.createDocumentFragment()
 
+	let accum = 0
+
 	data.forEach(child => {
 		const post = reddit.post(child.data)
+		accum += post.score
 		const div = createPost(post)
+
 
 		frag.appendChild(div)
 	})
+
+	const average = accum / frag.children.length
+
+	for (const post of frag.children) {
+		if (post.score > average * 1.5)
+			post.classList.add("ribbon-post-top")
+	}
 
 	if (more) {
 		const lastChild = frag.lastChild
@@ -245,12 +255,7 @@ function search(subreddit, query) {
 function openFullPost(title, content, permalink) {
 	openOverlay()
 
-	// TODO: Other elements (extract to loadSource or smth)
-	let img = content.firstChild
-	if (img && img.tagName === "IMG") {
-		delete content.dataset.src
-		lazyload(img, "source", "src")
-	}
+	loadSources(content)
 
 	fullPost.insertBefore(content, fullPost.firstChild)
 	fullPost.insertBefore(title, fullPost.firstChild)
@@ -292,6 +297,25 @@ function openFullPost(title, content, permalink) {
 	})
 }
 
+function loadSources(content) {
+	const images = content.getElementsByTagName("img")
+	for (const img of images)
+	{
+		lazyload(img, "source", "src")
+
+		img.decode().then(() => {
+			if (img.dataset.src) {
+				delete img.dataset.src
+				img.classList.add("lazyloaded")
+			}
+		})
+	}
+
+	const video = content.querySelector("video")
+	if (video)
+		video.loadSource()
+}
+
 function addComment(fragment, data, level = 0) {
 	const comment = createComment(data.author, data.body_html, ago(new Date(data.created_utc * 1000)))
 	comment.style.paddingLeft = 21 * level + "px"
@@ -306,6 +330,7 @@ function addComment(fragment, data, level = 0) {
 function createPost(post) {
 	const div = document.createElement("div")
 	div.name = post.name
+	div.score = post.score
 	div.permalink = post.permalink
 	div.className = "ribbon-post"
 
@@ -332,9 +357,8 @@ function createContent(post) {
 			let thumbnail = post.thumbnail.url
 			let source = post.url
 
-			if (post.preview && post.preview.resolutions.length > 0) {
+			if (post.preview && post.preview.resolutions.length > 0)
 				thumbnail = post.preview.resolutions.last_or(3).url
-			}
 
 			content.appendChild(createImg(thumbnail, source))
 			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
@@ -345,7 +369,7 @@ function createContent(post) {
 			let urls = { hd: post.preview.variants.mp4.source.url }
 
 			if (post.preview.variants.mp4.resolutions.length > 0)
-			urls.sd = post.preview.variants.mp4.resolutions.last_or(3).url
+				urls.sd = post.preview.variants.mp4.resolutions.last_or(3).url
 
 			content.appendChild(createVideo(urls))
 			content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
@@ -353,6 +377,9 @@ function createContent(post) {
 			break
 		}
 		case "gallery": {
+			if (post.gallery.length === 0)
+				break
+
 			const elements = post.gallery.map(entry => createGalleryElement(entry))
 
 			content.appendChild(createAlbum(elements))
@@ -455,7 +482,6 @@ function createIframe(src) {
 	iframe.dataset.src = src
 	iframe.referrerPolicy = "no-referrer"
 	iframe.allowfullscreen = true
-
 
 	const loader = document.createElement("div")
 	loader.className = "iframe-loader"

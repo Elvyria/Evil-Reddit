@@ -12,6 +12,7 @@ const mime = {
 export function createVideo(urls, poster, controls) {
 	const video = document.createElement("video")
 	video.addSource = addSource
+	video.loadSource = loadSource
 
 	if (poster) {
 		video.dataset.poster = poster
@@ -23,32 +24,23 @@ export function createVideo(urls, poster, controls) {
 	}
 
 	// TODO: Custom controls
-	if (controls) {
+	if (controls)
+	{
 		video.controls = true
+		addControls(video)
+	}
+	else
+	{
+		video.loop = video.muted = true
 
-		// const controls = document.createElement("div")
+		video.addEventListener("enterView", () => {
+			if (!video.src) {
+				video.src = video.dataset.src
+				delete video.dataset.src
+			}
 
-		// const playpause = document.createElement("div")
-		// playpause.addEventListener('click', () => {
-		// if (video.paused || video.ended) {
-		// video.play()
-		// } else {
-		// video.pause()
-		// }
-		// });
-
-		// const progress = document.createElement("progress")
-		// video.addEventListener('loadedmetadata', () => {
-		// progress.setAttribute('max', video.duration);
-		// });
-
-		// const volume = document.createElement("div")
-		// const fullscreen = document.createElement("div")
-
-	} else {
-		video.loop = video.autoplay = video.muted = true
-
-		video.addEventListener("enterView", video.play)
+			video.play()
+		})
 
 		observer.observe(video)
 	}
@@ -60,7 +52,8 @@ export function createVideo(urls, poster, controls) {
 
 	if (!urls) return video
 
-	if (urls.hls) {
+	if (urls.hls)
+	{
 		if (Hls.isSupported())
 		{
 			video.dataset.src = urls.hls
@@ -68,18 +61,22 @@ export function createVideo(urls, poster, controls) {
 		}
 		else if (video.canPlayType(mime.hls))
 		{
-			video.addSource(urls.hls, mime.hls)
+			video.dataset.src = urls.uls
 		}
 	}
+	else if (urls.sd)
+	{
+		video.dataset.src = urls.sd
 
-	// if (urls.fallback)
-		// video.addSource(urls.fallback)
+		if (urls.hd)
+			video.dataset.source = urls.hd
+	}
+	else if (urls.hd)
+	{
+		video.dataset.src = urls.hd
+	}
 
-	if (urls.sd)
-		video.addSource(urls.sd)
-
-	if (urls.hd)
-		video.addSource(urls.hd)
+	// TODO: Fallback
 
 	return video
 }
@@ -95,6 +92,36 @@ function pause() {
 
 function loadPoster() {
 	lazyload(this, "poster")
+}
+
+function loadSource() {
+	if (!this.dataset.source)
+		return
+
+	if (this.paused)
+	{
+		this.src = this.dataset.source
+		this.currentTime = time
+	}
+	else
+	{
+		const preload = this.cloneNode()
+		this.parentNode.replaceChild(preload, this)
+
+		this.src = this.dataset.source
+		this.addEventListener("canplaythrough", () => {
+			preload.parentNode.replaceChild(this, preload)
+			this.currentTime = preload.currentTime
+			this.play()
+
+			preload.src = ""
+		}, { once: true })
+
+		this.load()
+	}
+
+	delete this.dataset.source
+
 }
 
 function addSource(src, type) {
@@ -130,6 +157,23 @@ function initHLS() {
 	})
 }
 
-// function maximizeQuality(event, data) {
-	// hls data.levels.
-// }
+function addControls(video) {
+	// const controls = document.createElement("div")
+
+	// const playpause = document.createElement("div")
+	// playpause.addEventListener('click', () => {
+	// if (video.paused || video.ended) {
+	// video.play()
+	// } else {
+	// video.pause()
+	// }
+	// });
+
+	// const progress = document.createElement("progress")
+	// video.addEventListener('loadedmetadata', () => {
+	// progress.setAttribute('max', video.duration);
+	// });
+
+	// const volume = document.createElement("div")
+	// const fullscreen = document.createElement("div")
+}
