@@ -433,13 +433,13 @@ function createContent(post) {
 		}
 		case "link": {
 			if (post.preview) {
-				let previewURL = post.preview.source.url
+				let thumbnail = post.thumbnail.url
+				let source = post.preview.source.url
 
-				if (post.preview.resolutions.length > 0) {
-					previewURL = post.preview.resolutions.last_or(3).url
-				}
+				if (post.preview.resolutions.length > 0)
+					thumbnail = post.preview.resolutions.last_or(3).url
 
-				content.appendChild(createLink(post.url, createImg(previewURL)))
+				content.appendChild(createLink(post.url, createImg(thumbnail, source)))
 				content.style.height = scale(post.preview.source.height, post.preview.source.width, 400) + "px"
 
 			} else content.appendChild(createLink(post.url))
