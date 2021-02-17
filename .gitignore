@@ -1,7 +1,9 @@
-/server*
+/Evil-Reddit*
 /web/assets/background.png
 /web/js/*.js
+/web/js/reddit.js.LICENSE.txt
 
+/web/.pnp.js
 /web/.yarn/*
 !/web/.yarn/releases
 !/web/.yarn/plugins
