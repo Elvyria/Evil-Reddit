@@ -15,6 +15,14 @@ const overlay = document.getElementById("overlay")
 const fullPost = document.getElementById("full-post")
 const comments = document.getElementById("comments")
 
+// Templates
+const t_post = document.getElementById("post-template").content.firstElementChild
+const t_iframe = document.getElementById("iframe-template").content
+const t_post_link = document.getElementById("post-link-template").content.firstElementChild
+const t_img = document.getElementById("img-template").content.firstElementChild
+const t_album = document.getElementById("album-template").content.firstElementChild
+const t_comment = document.getElementById("comment-template").content.firstElementChild
+
 const once = { once: true }
 
 //TODO: Rename me
@@ -23,7 +31,7 @@ let options
 const brick = Bricks(
 	{
 		container: ribbon,
-		packed: 'bricked',
+		packed: "bricked",
 		sizes: [
 			{               columns: 1, gutter: 10 },
 			{ mq: "800px",  columns: 2, gutter: 10 },
@@ -32,7 +40,7 @@ const brick = Bricks(
 		],
 		position: false
 	}
-).pack()
+).resize(true).pack()
 
 loadConfig("/config.json").then(main)
 
@@ -111,8 +119,8 @@ function main(config) {
 			const post = reddit.post(data[0].data.children[0].data)
 
 			const div = createPost(post)
-			const title = div.getElementsByClassName("post-title")[0]
-			const content = div.getElementsByClassName("post-content")[0]
+			const title = div.querySelector(".post-title")
+			const content = div.querySelector(".post-content")
 
 			openFullPost(title, content, div.permalink)
 		})
@@ -328,7 +336,7 @@ function addComment(fragment, data, level = 0) {
 }
 
 function createPost(post) {
-	const div = document.createElement("div")
+	const div = t_post.cloneNode()
 	div.name = post.name
 	div.score = post.score
 	div.permalink = post.permalink
@@ -478,18 +486,12 @@ function createGalleryElement(entry) {
 }
 
 function createIframe(src) {
-	const iframe = document.createElement("iframe")
+	const fragment = t_iframe.cloneNode(true)
+
+	const iframe = fragment.querySelector("iframe")
 	iframe.dataset.src = src
-	iframe.referrerPolicy = "no-referrer"
-	iframe.allowfullscreen = true
 
-	const loader = document.createElement("div")
-	loader.className = "iframe-loader"
-
-	const icon = document.createElement("span")
-	icon.innerText = "勒"
-
-	loader.appendChild(icon)
+	const loader = fragment.querySelector(".iframe-loader")
 
 	loader.addEventListener("click", (e) => {
 		iframe.src = iframe.dataset.src
@@ -504,32 +506,21 @@ function createIframe(src) {
 		e.stopPropagation()
 	})
 
-	const result = document.createDocumentFragment()
-	result.appendChild(loader)
-	result.appendChild(iframe)
-
-	return result
+	return fragment
 }
 
 function createComment(author, html, date) {
-	const comment = document.createElement("div")
-	comment.className = "comment"
+	const comment = t_comment.cloneNode(true)
 
-	const authorLink = document.createElement("a")
-	authorLink.href = "https://reddit.com/user/" + author
-	authorLink.className = "comment-author"
-	authorLink.innerText = author
-
-	const title = document.createElement("div")
-	title.appendChild(authorLink)
+	const title = comment.querySelector(".comment-title")
 	title.innerHTML += "  •  " + date
 
-	const content = document.createElement("div")
-	content.className = "comment-content"
-	content.innerHTML = html
+	const authorLink = comment.querySelector(".comment-author")
+	authorLink.href = "https://reddit.com/user/" + author
+	authorLink.innerText = author
 
-	comment.appendChild(title)
-	comment.appendChild(content)
+	const content = comment.querySelector(".comment-content")
+	content.innerHTML = html
 
 	return comment
 }
@@ -545,12 +536,10 @@ function createFlair(text, fg, bg) {
 }
 
 function createImg(url, source) {
-	const img = document.createElement("img")
+	const img = t_img.cloneNode()
 
 	img.dataset.src = url
 	img.dataset.source = source
-	img.referrerPolicy = "no-referrer"
-	img.decoding = "async"
 
 	img.addEventListener("enterView", (e) => {
 		lazyload(img, "src")
@@ -563,12 +552,8 @@ function createImg(url, source) {
 }
 
 function createLink(url, preview) {
-	const a = document.createElement("a")
-	a.className = "external-link"
+	const a = t_post_link.cloneNode()
 	a.href = url
-	a.target = "_blank"
-	a.rel = "noreferrer noopener"
-	a.onclick = (e) => { e.stopPropagation() }
 
 	if (preview) {
 		const icon = document.createElement("span")
@@ -591,30 +576,21 @@ function centerInList(list, center) {
 }
 
 function createAlbum(images) {
-	const album  = document.createElement("div")
-	const collection = document.createElement("ul")
-	const left = wrap(document.createElement("div"))
-	const right = wrap(document.createElement("div"))
-
-	album.className = "album"
-	collection.className = "album-collection"
-	left.className = "album-control-left"
-	left.firstChild.className = "album-arrow album-left"
-	left.style.display = "none"
-	right.className = "album-control-right"
-	right.firstChild.className = "album-arrow album-right"
+	const album = t_album.cloneNode()
+	const collection = album.querySelector(".album-collection")
+	const left = album.querySelector(".album-control-left")
+	const right = album.querySelector(".album-control-right")
 
 	images.forEach(img => collection.appendChild(img))
 
-	let current = 0
-
-	centerInList(collection.children, current)
+	album.current = 0
+	centerInList(collection.children, album.current)
 
 	left.onclick = (e) => {
-		if (current > 0) {
-			centerInList(collection.children, --current)
+		if (album.current > 0) {
+			centerInList(collection.children, --album.current)
 			show(right)
-			if (current === 0)
+			if (album.current === 0)
 				hide(left)
 		}
 
@@ -622,19 +598,15 @@ function createAlbum(images) {
 	}
 
 	right.onclick = (e) => {
-		if (current + 1 < collection.children.length) {
-			centerInList(collection.children, ++current)
+		if (album.current + 1 < collection.children.length) {
+			centerInList(collection.children, ++album.current)
 			show(left)
-			if (current === collection.children.length - 1)
+			if (album.current === collection.children.length - 1)
 				hide(right)
 		}
 
 		e.stopPropagation()
 	}
-
-	album.appendChild(collection)
-	album.appendChild(left)
-	album.appendChild(right)
 
 	return album
 }
