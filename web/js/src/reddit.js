@@ -336,21 +336,18 @@ function addComment(fragment, data, level = 0) {
 }
 
 function createPost(post) {
-	const div = t_post.cloneNode()
+	const div = t_post.cloneNode(true)
 	div.name = post.name
 	div.score = post.score
 	div.permalink = post.permalink
-	div.className = "ribbon-post"
 
-	const title = document.createElement("div")
-	title.className = "post-title"
+	const title = div.querySelector(".post-title")
 
 	if (post.flair)
 		title.appendChild(createFlair(post.flair.text, post.flair.fg, post.flair.bg))
 
 	title.innerHTML += post.title
 
-	div.appendChild(title)
 	div.appendChild(createContent(post))
 
 	return div
@@ -576,7 +573,7 @@ function centerInList(list, center) {
 }
 
 function createAlbum(images) {
-	const album = t_album.cloneNode()
+	const album = t_album.cloneNode(true)
 	const collection = album.querySelector(".album-collection")
 	const left = album.querySelector(".album-control-left")
 	const right = album.querySelector(".album-control-right")
