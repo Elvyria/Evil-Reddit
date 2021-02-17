@@ -537,10 +537,10 @@ function createImg(url, source) {
 
 	img.dataset.src = url
 	img.dataset.source = source
+	img.addEventListener("load", () => img.classList.add("lazyloaded"), once)
 
 	img.addEventListener("enterView", (e) => {
 		lazyload(img, "src")
-		img.decode().then(() => img.classList.add("lazyloaded"))
 	}, once)
 
 	observer.observe(img)

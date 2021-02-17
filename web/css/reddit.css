@@ -62,10 +62,10 @@ body::-webkit-scrollbar {
 
 .post-content img {
 	opacity: 0;
+	transition: opacity 1s;
 }
 
 .post-content img.lazyloaded {
-	transition-duration: 1s;
 	opacity: 1;
 }
 
