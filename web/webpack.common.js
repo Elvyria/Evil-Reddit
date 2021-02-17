@@ -2,10 +2,9 @@ const path = require('path');
 
 module.exports = {
 	entry: './js/src/reddit.js',
-	mode: 'development',
 	module: {
 		rules: [{
-			test: /\.js$/,
+			test: /\.m?js$/,
 			exclude: /node_modules/,
 			use: {
 				loader: 'babel-loader',
