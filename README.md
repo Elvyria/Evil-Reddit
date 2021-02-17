@@ -29,8 +29,6 @@ go start main.go
 
 Open browser and visit `127.0.0.1:3006/r/unixporn`, enjoy.
 
-Edit `web/config.json` according to your environment.
-
 Server is just an example, you can always write your own.  
 Just make sure to redirect all `/r/*` requests to `web/reddit.html`
 
