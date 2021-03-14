@@ -24,7 +24,7 @@ export function redgifs(url) {
 	return fetch(`https://api.redgifs.com/v1/gfycats${id}`)
 		.then(resp => resp.json())
 		.then(json => {
-			if (json.errorMessage.code === "NotFound") {
+			if (json.errorMessage && json.errorMessage.code === "NotFound") {
 				return null
 			}
 
