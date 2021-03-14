@@ -1,4 +1,7 @@
-export let reddit = {}
+export const reddit = {}
+
+const providerHost = "https://www.reddit.com"
+const apiQuery = ".json?raw_json=1"
 
 reddit.sortMethods = {
 	subreddit: ["hot", "new", "top", "rising"],
@@ -11,7 +14,7 @@ reddit.requestPosts = (subreddit, sort, after = "", limit = "100", time = "") =>
 	if (!reddit.sortMethods.subreddit.includes(sort))
 		sort = reddit.sortMethods.subreddit[0]
 
-	const url = `https://www.reddit.com/r/${subreddit}/${sort}/.json?after=${after}&limit=${limit}&t=${time}&raw_json=1`;
+	const url = `${providerHost}/r/${subreddit}/${sort}/${apiQuery}&after=${after}&limit=${limit}&t=${time}`;
 
 	return fetch(url)
 		.then(resp => resp.json())
@@ -22,28 +25,28 @@ reddit.requestPost = (permalink, sort) => {
 	if (!reddit.sortMethods.comments.includes(sort))
 		sort = reddit.sortMethods.comments[0]
 
-	const url = `https://www.reddit.com${permalink}.json?raw_json=1`
+	const url = `${providerHost}${permalink}${apiQuery}`
 
 	return fetch(url)
 		.then(resp => resp.json())
 }
 
 reddit.requestAbout = (subreddit) => {
-	const url = `https://www.reddit.com/r/${subreddit}/about.json?raw_json=1`
+	const url = `${providerHost}/r/${subreddit}/about${apiQuery}`
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.data)
 }
 
 reddit.requestSearch = (query, subreddit = "", sort = "", after = "", limit = "100", time = "") => {
-	const url = `https://www.reddit.com/r/${subreddit}/search/.json?q=${query}&after=${after}&restrict_sr=1&limit=${limit}&t=${time}&include_over_18=on&raw_json=1`
+	const url = `${providerHost}/r/${subreddit}/search/${apiQuery}&q=${query}&after=${after}&restrict_sr=1&limit=${limit}&t=${time}&include_over_18=on`
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.data.children)
 }
 
 reddit.requestSearchNames = (query, exact = false) => {
-	const url = `https://www.reddit.com/api/search_reddit_names.json?query=${query}&exact=${exact}`
+	const url = `${providerHost}/api/search_reddit_names${apiQuery}&query=${query}&exact=${exact}`
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.names)

@@ -1,3 +1,4 @@
+import { once } from "./globals.js"
 import { observer, lazyload } from "./observe.js"
 
 import Hls from "hls.js"
@@ -9,7 +10,7 @@ const mime = {
 	dash: "application/dash+xml",
 }
 
-export function createVideo(urls, poster, controls) {
+export function video(urls, poster, controls) {
 	const video = document.createElement("video")
 	video.addSource = addSource
 	video.loadSource = loadSource
@@ -18,7 +19,7 @@ export function createVideo(urls, poster, controls) {
 		video.dataset.poster = poster
 		video.preload = "none"
 
-		video.addEventListener("enterView", loadPoster, { once: true })
+		video.addEventListener("enterView", loadPoster, once)
 
 		observer.observe(video)
 	}
@@ -32,17 +33,6 @@ export function createVideo(urls, poster, controls) {
 	else
 	{
 		video.loop = video.muted = true
-
-		video.addEventListener("enterView", () => {
-			if (!video.src) {
-				video.src = video.dataset.src
-				delete video.dataset.src
-			}
-
-			video.play()
-		})
-
-		observer.observe(video)
 	}
 
 	video.addEventListener("play", play)
@@ -52,33 +42,49 @@ export function createVideo(urls, poster, controls) {
 
 	if (!urls) return video
 
-	if (urls.hls)
-	{
-		if (Hls.isSupported())
-		{
-			video.dataset.src = urls.hls
-			video.addEventListener("play", initHLS)
-		}
-		else if (video.canPlayType(mime.hls))
-		{
-			video.dataset.src = urls.uls
-		}
-	}
-	else if (urls.sd)
-	{
-		video.dataset.src = urls.sd
+	video.urls = urls
+	video.addEventListener("enterView", init, once)
 
-		if (urls.hd)
-			video.dataset.source = urls.hd
-	}
-	else if (urls.hd)
-	{
-		video.dataset.src = urls.hd
-	}
-
-	// TODO: Fallback
+	observer.observe(video)
 
 	return video
+}
+
+function init(event, urls) {
+	const video = event.target
+
+	Promise.resolve(video.urls).then(urls => {
+		if (!urls) return
+
+		if (urls.hls)
+		{
+			if (Hls.isSupported())
+			{
+				video.dataset.src = urls.hls
+				video.addEventListener("play", initHLS)
+			}
+			else if (video.canPlayType(mime.hls))
+			{
+				video.dataset.src = urls.uls
+			}
+		}
+		else if (urls.sd)
+		{
+			video.src = urls.sd
+
+			if (urls.hd)
+				video.dataset.source = urls.hd
+		}
+		else if (urls.hd)
+		{
+			video.src = urls.hd
+		}
+
+		if (video.loop) {
+			video.play()
+			video.addEventListener("enterView", video.play)
+		}
+	})
 }
 
 function play() {
@@ -98,30 +104,41 @@ function loadSource() {
 	if (!this.dataset.source)
 		return
 
-	if (this.paused)
+	const video = this
+
+	if (video.paused)
 	{
-		this.src = this.dataset.source
-		this.currentTime = time
+		const time = video.currentTime
+		video.src = video.dataset.source
+		video.currentTime = time
 	}
 	else
 	{
-		const preload = this.cloneNode()
-		this.parentNode.replaceChild(preload, this)
+		// Flicker free src replacement
+		const preload = video.cloneNode()
 
-		this.src = this.dataset.source
-		this.addEventListener("canplaythrough", () => {
-			preload.parentNode.replaceChild(this, preload)
-			this.currentTime = preload.currentTime
-			this.play()
+		video.pause()
 
-			preload.src = ""
-		}, { once: true })
+		preload.currentTime = video.currentTime
+		preload.play().then(() => {
+			video.replaceWith(preload)
+			video.preload = "auto"
+			video.src = preload.dataset.source
+		})
 
-		this.load()
+		video.addEventListener("canplaythrough", () => {
+			preload.pause()
+
+			video.currentTime = preload.currentTime
+			video.play().then(() => {
+				preload.replaceWith(video)
+				preload.removeAttribute("src")
+				preload.load()
+			})
+		}, once)
 	}
 
-	delete this.dataset.source
-
+	delete video.dataset.source
 }
 
 function addSource(src, type) {
