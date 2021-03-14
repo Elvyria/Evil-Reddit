@@ -383,3 +383,23 @@ a {
 	overflow: hidden;
 	white-space: nowrap;
 }
+
+table {
+	border: 2px solid #eee;
+	border-spacing: 0;
+}
+
+table tr {
+	border: 1px solid #eee;
+}
+
+table th {
+	border: 1px solid #eee;
+	text-align: center;
+	padding: 4px 8px;
+}
+
+table td {
+	border: 1px solid #eee;
+	padding: 4px 8px;
+}
