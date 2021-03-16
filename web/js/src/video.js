@@ -108,37 +108,27 @@ function loadSource() {
 
 	if (video.paused)
 	{
-		const time = video.currentTime
+		const time = video.currentTime;
 		video.src = video.dataset.source
 		video.currentTime = time
+
+		delete video.dataset.source
 	}
 	else
 	{
-		// Flicker free src replacement
-		const preload = video.cloneNode()
+		const preload = document.createElement("video")
+		preload.preload = "auto"
+		preload.src = video.dataset.source
+		preload.addEventListener("canplaythrough", () => {
+			const time = video.currentTime;
 
-		video.pause()
+			video.src = video.dataset.source
+			delete video.dataset.source
 
-		preload.currentTime = video.currentTime
-		preload.play().then(() => {
-			video.replaceWith(preload)
-			video.preload = "auto"
-			video.src = preload.dataset.source
-		})
-
-		video.addEventListener("canplaythrough", () => {
-			preload.pause()
-
-			video.currentTime = preload.currentTime
-			video.play().then(() => {
-				preload.replaceWith(video)
-				preload.removeAttribute("src")
-				preload.load()
-			})
+			video.currentTime = time;
+			video.play()
 		}, once)
 	}
-
-	delete video.dataset.source
 }
 
 function addSource(src, type) {
