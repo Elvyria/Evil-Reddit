@@ -4,15 +4,22 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width">
 		<title>Evil-Reddit</title>
-		<link id="icon" rel="shortcut icon" href="" type="image/png"/>
+		<link id="favicon" rel="shortcut icon" href="data:," type="image/png"/>
 		<link rel="stylesheet" href="/css/reddit.css" type="text/css" media="all">
 		<link rel="stylesheet" href="/css/album.css" type="text/css" media="all">
 		<script src="/js/reddit.js" defer></script>
 	</head>
 	<body>
 		<div id="header">
+			<div id="banner-wrapper">
+				<img id="banner"/>
+			</div>
+			<div id="icon">
+				<img id="icon-image"/>
+				<span id="icon-title"></span>
+			</div>
 			<div id="search">
-				<input type="text" placeholder="探索">
+				<input type="search" placeholder="" data-placeholder="" data-value="">
 				<div id="search-tags"></div>
 			</div>
 			<div id="sorting">

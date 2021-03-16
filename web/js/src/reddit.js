@@ -9,9 +9,7 @@ import { elements } from "./elements.js"
 
 import Bricks from "bricks.js"
 
-const favicon = document.getElementById("icon")
 const ribbon = document.getElementById("reddit-ribbon")
-const searchInput = document.querySelector("input")
 const spinner = document.getElementById("spinner")
 
 const overlay = document.getElementById("overlay")
@@ -76,18 +74,47 @@ function main() {
 	// TODO: History states
 	// window.addEventListener("popstate", (e) => {})
 
+	const searchInput = document.querySelector("input")
+
+	searchInput.value = ""
+
 	searchInput.addEventListener("keydown", e => {
 		if (e.key === "Enter") {
 			const query = searchInput.value.trim()
 
-			if (query.length !== 0)
+			if (query.length !== 0) {
 				search(options.subreddit, query)
+				searchInput.value = ""
+			}
 		}
 	})
 
+	searchInput.addEventListener("focus", () => {
+		searchInput.value = searchInput.dataset.value
+		searchInput.placeholder = "Search"
+	})
+
+	searchInput.addEventListener("blur", () => {
+		searchInput.dataset.value = searchInput.value
+		searchInput.placeholder = searchInput.dataset.placeholder
+		searchInput.value = ""
+	})
+
 	provider.requestAbout(options.subreddit).then(data => {
+		const iconUrl = data.icon_img !== "" ? data.icon_img : data.community_icon
 		document.title = data.title
-		favicon.href = data.icon_img
+
+		const favicon = document.getElementById("favicon")
+		favicon.href = iconUrl
+
+		const banner = document.getElementById("banner")
+		banner.src = data.banner_background_image
+
+		const iconImg = document.getElementById("icon-image")
+		iconImg.src = iconUrl
+
+		const iconTitle = document.getElementById("icon-title")
+		iconTitle.textContent = data.title
 	})
 
 	ribbon.addEventListener("click", clickPost)
@@ -227,7 +254,7 @@ function parseUrl(url) {
 }
 
 function search(subreddit, query) {
-	history.pushState(null, "", `/r/${options.subreddit}/search/?q=${searchInput.value}`)
+	history.pushState(null, "", `/r/${options.subreddit}/search/?q=${query}`)
 
 	return provider.requestSearch(query, subreddit, "", "", 100).then(posts => {
 		empty(ribbon)
