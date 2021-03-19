@@ -19,11 +19,9 @@
   </p>
 </div>
 
-
+## Preview
 
 ![preview](/preview.jpg)
-
-Demo:  (Outdated)
 
 ## Index
 
