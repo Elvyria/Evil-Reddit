@@ -9,17 +9,20 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    defaults:
-      run:
-        working-directory: ./web
-
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+
     - uses: actions/setup-node@v2
-    - run: yarn install
-    - run: yarn product
+
+    - name: Build Web
+      working-directory: web
+      run: |
+        yarn install
+        yarn product
+
     - name: Artifact Upload
-    - uses: actions/upload-artifact@v2
-    - with:
+      uses: actions/upload-artifact@v2
+      with:
         name: Evil-Reddit Latest
         path: js/*.js
