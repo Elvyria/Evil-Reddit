@@ -264,6 +264,9 @@ body::-webkit-scrollbar {
 
 .external-link {
 	position: relative;
+	overflow: hidden;
+	white-space: nowrap;
+	font-size: 0.9em
 }
 
 .external-link > img {
@@ -408,6 +411,13 @@ body::-webkit-scrollbar {
 	border-top: 2px #454545 solid;
 }
 
+.md blockquote {
+    border-left: 5px solid #ffffff17;
+    margin: 4px 0 4px 8px;
+    border-radius: 10px;
+	padding: 10px 0 10px 20px;
+}
+
 .md h1 {
 	font-family: Noto Sans, Arial, sans-serif;
 	font-size: 1.39em;
@@ -432,11 +442,6 @@ body::-webkit-scrollbar {
 
 a {
 	color: rgb(79, 188, 255);
-}
-
-.external-link {
-	overflow: hidden;
-	white-space: nowrap;
 }
 
 table {
