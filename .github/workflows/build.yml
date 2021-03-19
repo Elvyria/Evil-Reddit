@@ -18,3 +18,8 @@ jobs:
     - uses: actions/setup-node@v2
     - run: yarn install
     - run: yarn product
+    - name: Artifact Upload
+    - uses: actions/upload-artifact@v2
+    - with:
+        name: Evil-Reddit Latest
+        path: js/*.js
