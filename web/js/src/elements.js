@@ -8,6 +8,7 @@ export const elements = {}
 const t_post = document.getElementById("post-template").content.firstElementChild
 const t_iframe = document.getElementById("iframe-template").content
 const t_link = document.getElementById("post-link-template").content.firstElementChild
+const t_link_icon = document.getElementById("post-link-icon-template").content.firstElementChild
 const t_img = document.getElementById("img-template").content.firstElementChild
 const t_album = document.getElementById("album-template").content.firstElementChild
 const t_comment = document.getElementById("comment-template").content.firstElementChild
@@ -106,14 +107,12 @@ elements.link = (url, preview) => {
 
 	if (preview)
 	{
-		const icon = document.createElement("span")
-		icon.innerText = ""
-		icon.className = "external-link-icon"
+		const icon = t_link_icon.cloneNode(true)
 
 		a.appendChild(preview)
 		a.appendChild(icon)
 	}
-	else { a.innerText = url }
+	else a.innerText = url.replace(/https?:\/\/(www.)?/, "")
 
 	return a
 }
