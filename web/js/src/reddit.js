@@ -108,7 +108,15 @@ function main() {
 		favicon.href = iconUrl
 
 		const banner = document.getElementById("banner")
-		banner.src = data.banner_background_image
+		if (data.banner_background_image !== "") {
+			banner.srcset = `${data.banner_background_image} 1x`
+
+			if (data.mobile_banner_image !== "") {
+				banner.srcset += `,${data.mobile_banner_image} 2x`
+			}
+
+			show(banner)
+		}
 
 		const iconImg = document.getElementById("icon-image")
 		iconImg.src = iconUrl
