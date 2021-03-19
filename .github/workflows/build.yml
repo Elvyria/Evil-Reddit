@@ -25,4 +25,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: Evil-Reddit Latest
-        path: js/*.js
+        path: web/js/*.js
