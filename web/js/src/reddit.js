@@ -47,7 +47,10 @@ function main() {
 
 	window.scrollTo({ top: 0, behavior: 'smooth' })
 
-	options = parseUrl(new URL(window.location.href))
+	options = parseUrl(new URL(document.location))
+
+	const bannerLink = document.getElementById("banner-link")
+	bannerLink.href = `/r/${options.subreddit}`
 
 	// Sort buttons
 	Array.from(document.getElementById("sorting").children).forEach((button, i) => {
@@ -253,6 +256,7 @@ function parseUrl(url) {
 	const result = {
 		subreddit:    parts[2],
 		fullPost:     false,
+		search:       url.searchParams.get("q"),
 		sortSub:      undefined,
 		sortComments: undefined,
 	}
@@ -308,6 +312,8 @@ function openFullPost(title, content, permalink) {
 		})
 	}
 
+	const oldPath = window.location.pathname + window.location.search
+
 	const subTitle = document.title
 	document.title = title.textContent
 
@@ -318,7 +324,7 @@ function openFullPost(title, content, permalink) {
 			closeOverlay()
 
 			document.title = subTitle
-			history.pushState(null, subTitle, window.location.pathname.substring(0, window.location.pathname.indexOf("comments") - 1))
+			history.pushState(null, subTitle, oldPath)
 
 			fullPost.removeChild(title)
 			fullPost.removeChild(content)
