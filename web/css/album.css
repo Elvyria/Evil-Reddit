@@ -24,17 +24,22 @@
 	height: inherit;
 }
 
-.album-control-left {
+.album-control-left, .album-control-right {
 	position: absolute;
 	height: 100%;
 	width: 50px;
+	transition-duration: 100ms;
+}
+
+.album-control-left:hover, .album-control-right:hover {
+	background-color: rgba(255, 255, 255, 0.1);
+}
+
+.album-control-left {
 	left: 0;
 }
 
 .album-control-right {
-	position: absolute;
-	height: 100%;
-	width: 50px;
 	right: 0;
 }
 
