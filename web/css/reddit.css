@@ -11,6 +11,10 @@
 #banner-wrapper {
 }
 
+#banner-link {
+	display: block;
+}
+
 #banner {
 	position: relative;
 	width: 100%;
