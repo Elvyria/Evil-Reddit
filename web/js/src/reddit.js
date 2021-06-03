@@ -36,9 +36,14 @@ const brick = Bricks({
 
 }).resize(true).pack()
 
+let clickDistance = 0
+
 main()
 
 function main() {
+
+	document.addEventListener("mousedown", e => { clickDistance = e.x + e.y })
+	document.addEventListener("mouseup",   e => { clickDistance = Math.abs(clickDistance - e.x - e.y) })
 
 	window.scrollTo({ top: 0, behavior: 'smooth' })
 
@@ -125,7 +130,10 @@ function main() {
 		iconTitle.textContent = data.title
 	})
 
-	ribbon.addEventListener("click", clickPost)
+	ribbon.addEventListener("click", e => { 
+		if (clickDistance < 10)
+			clickPost(e)
+	})
 
 	if (options.fullPost) {
 		provider.requestPost(window.location.pathname, options.sortComments).then(data => {
