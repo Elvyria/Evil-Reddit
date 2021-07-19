@@ -42,6 +42,7 @@ main()
 
 function main() {
 
+	// Calculates cursor move distance between press and release. Inacurate
 	document.addEventListener("mousedown", e => { clickDistance = e.x + e.y })
 	document.addEventListener("mouseup",   e => { clickDistance = Math.abs(clickDistance - e.x - e.y) })
 
@@ -419,14 +420,15 @@ function createContent(post) {
 			break
 		}
 		case "iframe:gfycat": {
-			const gif = gfycat(post.media.oembed.thumbnail_url)
-			content.appendChild(elements.video(gif))
+			const video = elements.video(() => gfycat(post.media.oembed.thumbnail_url))
+			content.appendChild(video)
+
 			content.style.height = scale(post.media.oembed.thumbnail_height, post.media.oembed.thumbnail_width, postWidth) + "px"
 
 			break
 		}
 		case "iframe:redgifs": {
-			const video = elements.video(redgifs(post.url), post.preview.source.url)
+			const video = elements.video(() => redgifs(post.url), post.preview.source.url)
 
 			content.appendChild(video)
 			content.style.height = scale(post.preview.source.height, post.preview.source.width, postWidth) + "px"

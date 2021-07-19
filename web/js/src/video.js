@@ -50,8 +50,11 @@ export function video(urls, poster, controls) {
 	return video
 }
 
-function init(event, urls) {
+function init(event) {
 	const video = event.target
+
+	if (typeof video.urls === "function")
+		video.urls = video.urls()
 
 	Promise.resolve(video.urls).then(urls => {
 		if (!urls) return
@@ -81,7 +84,10 @@ function init(event, urls) {
 		}
 
 		if (video.loop) {
-			video.play()
+			video.preload = "auto"
+			video.addEventListener("canplaythrough", video.play, once)
+
+			// All videos are paused on exitView, this will resume it
 			video.addEventListener("enterView", video.play)
 		}
 	})

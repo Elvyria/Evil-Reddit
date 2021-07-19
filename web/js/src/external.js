@@ -28,6 +28,6 @@ export function redgifs(url) {
 				return null
 			}
 
-			return { hd: json.gfyItem.mp4Url, sd: json.gfyItem.miniUrl }
+			return { hd: json.gfyItem.mp4Url, sd: json.gfyItem.mobileUrl }
 		})
 }
