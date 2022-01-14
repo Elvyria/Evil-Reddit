@@ -3,9 +3,10 @@
 /web/js/*.js
 /web/js/reddit.js.LICENSE.txt
 
-/web/.pnp.js
+/web/.pnp.*
 /web/.yarn/*
-!/web/.yarn/releases
+!/web/.yarn/patches
 !/web/.yarn/plugins
+!/web/.yarn/releases
 !/web/.yarn/sdks
 !/web/.yarn/versions
