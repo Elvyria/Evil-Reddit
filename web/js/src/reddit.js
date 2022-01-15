@@ -9,10 +9,10 @@ import { elements } from "./elements.js"
 
 import Bricks from "bricks.js"
 
-const ribbon = document.getElementById("reddit-ribbon")
-const spinner = document.getElementById("spinner")
+const ribbon   = document.getElementById("reddit-ribbon")
+const spinner  = document.getElementById("spinner")
 
-const overlay = document.getElementById("overlay")
+const overlay  = document.getElementById("overlay")
 const fullPost = document.getElementById("full-post")
 const comments = document.getElementById("comments")
 
@@ -217,7 +217,7 @@ function addPosts(data, more) {
 	if (more) {
 		const lastChild = frag.lastChild
 
-		lastChild.addEventListener("enterView", (e) => {
+		lastChild.addEventListener("enterView", (_) => {
 			observer.unobserve(lastChild)
 
 			more(lastChild.name).then(posts => addPosts(posts, more))
@@ -247,8 +247,7 @@ function clickPost(event) {
 		const content = post.getElementsByClassName("post-content")[0]
 
 		openFullPost(title, content, post.link).then(() => {
-			post.appendChild(title)
-			post.appendChild(content)
+			post.append(title, content)
 
 			show(post)
 		})

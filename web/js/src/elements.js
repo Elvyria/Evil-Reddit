@@ -5,13 +5,14 @@ import { video } from "./video.js"
 export const elements = {}
 
 // Templates
-const t_post = document.getElementById("post-template").content.firstElementChild
+const t_post      = document.getElementById("post-template").content.firstElementChild
 const t_flair = document.getElementById("flair-template").content.firstElementChild
-const t_link = document.getElementById("post-link-template").content.firstElementChild
+const t_iframe    = document.getElementById("iframe-template").content
+const t_link      = document.getElementById("post-link-template").content.firstElementChild
 const t_link_icon = document.getElementById("post-link-icon-template").content.firstElementChild
-const t_img = document.getElementById("img-template").content.firstElementChild
-const t_album = document.getElementById("album-template").content.firstElementChild
-const t_comment = document.getElementById("comment-template").content.firstElementChild
+const t_img       = document.getElementById("img-template").content.firstElementChild
+const t_album     = document.getElementById("album-template").content.firstElementChild
+const t_comment   = document.getElementById("comment-template").content.firstElementChild
 
 elements.post = (title_text, body, link, score, flair) => {
 	const div = t_post.cloneNode(true)
@@ -49,7 +50,7 @@ elements.iframe = (src) => {
 		hide(loader)
 
 		observer.observe(iframe)
-		iframe.addEventListener("exitView", (e) => {
+		iframe.addEventListener("exitView", (_) => {
 			iframe.src = ""
 			show(loader)
 		}, once)
@@ -93,7 +94,7 @@ elements.image = (url, source) => {
 	img.dataset.source = source
 	img.addEventListener("load", () => img.classList.add("lazyloaded"), once)
 
-	img.addEventListener("enterView", (e) => {
+	img.addEventListener("enterView", (_) => {
 		lazyload(img, "src")
 	}, once)
 
@@ -106,12 +107,10 @@ elements.link = (url, preview) => {
 	const a = t_link.cloneNode()
 	a.href = url
 
-	if (preview)
-	{
+	if (preview) {
 		const icon = t_link_icon.cloneNode(true)
 
-		a.appendChild(preview)
-		a.appendChild(icon)
+		a.append(preview, icon)
 	}
 	else a.innerText = url.replace(/https?:\/\/(www.)?/, "")
 

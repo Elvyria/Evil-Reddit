@@ -70,7 +70,7 @@ reddit.post = (data) => {
 		hint:      data.post_hint,
 		html:      data.selftext_html,
 		preview:   data.preview ? data.preview.images[0] : undefined,
-		gallery:   data.is_gallery ? Object.values(data.media_metadata).filter(entry => entry.status === "valid") : undefined,
+		gallery:   data.is_gallery && data.media_metadata ? Object.values(data.media_metadata).filter(entry => entry.status === "valid") : undefined,
 		media:     data.media && data.media.reddit_video ? reddit.media(data.media.reddit_video) : data.media,
 		url:       data.url,
 		thumbnail: {
