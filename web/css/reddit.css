@@ -191,7 +191,7 @@ body::-webkit-scrollbar {
 	flex-direction: column;
 	background-color: rgb(26, 26, 27);
 	margin: 0 0 10px 0;
-	padding: 8px 8px 8px 8px;
+	padding: 10px 5px 5px 5px;
 	border: 1px solid transparent;
 	border-radius: 4px;
 	width: 400px;
@@ -201,7 +201,7 @@ body::-webkit-scrollbar {
 }
 
 .ribbon-post:hover {
-	border: 1px solid rgb(129, 131, 132);
+	border: 1px solid #333;
 }
 
 .post-title {
@@ -250,7 +250,7 @@ body::-webkit-scrollbar {
 .post-content {
 	position: relative;
 	width: 100%;
-	margin: 8px auto 0 auto;
+	margin: 10px auto 0 auto;
 	overflow: hidden;
 }
 
@@ -316,7 +316,7 @@ body::-webkit-scrollbar {
 	text-align: center;
 	border: solid 1px #BBBC;
 	border-radius: 10px 0 0 0;
-	padding: 3px;
+	padding: 3px 0px 5px 3px;
 	transition: padding 300ms
 }
 
