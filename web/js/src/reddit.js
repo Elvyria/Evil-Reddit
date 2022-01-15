@@ -20,7 +20,13 @@ const comments = document.getElementById("comments")
 const postWidth = 400
 
 //TODO: Rename me
-let options
+let options = {
+	subreddit:    "",
+	fullPost:     false,
+	search:       "",
+	sortComments: provider.sortMethods.comments[0],
+	sortSub:      provider.sortMethods.subreddit[0],
+}
 
 const brick = Bricks({
 
@@ -254,19 +260,16 @@ function parseUrl(url) {
 
 	const result = {
 		subreddit:    parts[2],
-		fullPost:     false,
+		fullPost:     parts[3] === "comments",
 		search:       url.searchParams.get("q"),
-		sortSub:      undefined,
-		sortComments: undefined,
+		sortSub:      provider.sortMethods.subreddit[0],
+		sortComments: provider.sortMethods.comments[0],
 	}
 
-	if (parts[3] === "comments") {
+	if (result.fullPost) {
 		result.sortComments = url.searchParams.get("sort") ?? provider.sortMethods.comments[0]
-		result.sortSub = provider.sortMethods.subreddit[0]
-		result.fullPost = true
 	} else {
 		result.sortSub = provider.sortMethods.subreddit.includes(parts[3]) ? parts[3] : provider.sortMethods.subreddit[0]
-		result.sortComments = provider.sortMethods.substring
 	}
 
 	return result
