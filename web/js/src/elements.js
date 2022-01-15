@@ -6,7 +6,7 @@ export const elements = {}
 
 // Templates
 const t_post = document.getElementById("post-template").content.firstElementChild
-const t_iframe = document.getElementById("iframe-template").content
+const t_flair = document.getElementById("flair-template").content.firstElementChild
 const t_link = document.getElementById("post-link-template").content.firstElementChild
 const t_link_icon = document.getElementById("post-link-icon-template").content.firstElementChild
 const t_img = document.getElementById("img-template").content.firstElementChild
@@ -77,10 +77,10 @@ elements.comment = (author, html, date) => {
 }
 
 elements.flair = (text, fg, bg) => {
-	const flair = document.createElement("div")
+	const flair = t_flair.cloneNode()
 	flair.innerText = text
-	flair.className = "flair flair-" + fg
 
+	if (fg) flair.classList.add("flair-" + fg)
 	if (bg) flair.style.backgroundColor = bg
 
 	return flair

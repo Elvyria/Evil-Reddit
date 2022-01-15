@@ -208,7 +208,7 @@ body::-webkit-scrollbar {
 	color: rgb(215, 218, 220);
 	font-size: 1.1em;
 	font-weight: 500;
-	/* line-height: 22px; */
+	line-height: 22px;
 	padding: 0 2px;
 	margin: 0;
 	word-wrap: anywhere;
@@ -217,10 +217,24 @@ body::-webkit-scrollbar {
 .flair {
 	font-size: 0.9em;
 	display: inline-flex;
-	padding: 1px 8px;
-	border-radius: 30px;
+	padding: 2px 8px;
+	line-height: normal;
 	margin-right: 7px;
 	white-space: nowrap;
+}
+
+.flair:hover {
+	opacity: .9;
+	cursor: pointer;
+}
+
+.flair-round {
+	border-radius: 10px;
+}
+
+.flair-square {
+	border-radius: 5px;
+	margin-left: -10px;
 }
 
 .flair-dark {
