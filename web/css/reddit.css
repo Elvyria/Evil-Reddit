@@ -255,6 +255,7 @@ body::-webkit-scrollbar {
 	top: 0;
 	left: 0;
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
 	cursor: default;
 }
@@ -262,7 +263,13 @@ body::-webkit-scrollbar {
 .iframe-loader > span {
 	color: white;
 	font-family: "Nerd Font";
-	font-size: 2em;
+	font-size: 3em;
+	align-self: center;
+}
+
+.iframe-provider {
+	color: white;
+	font-size: 1.2em;
 	align-self: center;
 }
 

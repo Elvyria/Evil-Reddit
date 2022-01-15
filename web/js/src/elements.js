@@ -34,7 +34,6 @@ elements.post = (title_text, body, link, score, flair) => {
 
 elements.video = video
 
-// TODO: Display hostname or URL
 elements.iframe = (src) => {
 	const fragment = t_iframe.cloneNode(true)
 
@@ -42,6 +41,8 @@ elements.iframe = (src) => {
 	iframe.dataset.src = src
 
 	const loader = fragment.querySelector(".iframe-loader")
+	const provider = fragment.querySelector(".iframe-provider")
+	provider.innerText = new URL(src).host
 
 	loader.addEventListener("click", (e) => {
 		iframe.src = iframe.dataset.src
