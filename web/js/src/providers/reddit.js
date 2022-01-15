@@ -35,7 +35,7 @@ reddit.requestAbout = (subreddit) => {
 	const url = `${providerHost}/r/${subreddit}/about${apiQuery}`
 	return fetch(url)
 		.then(resp => resp.json())
-		.then(json => json.data)
+		.then(json => reddit.about(json.data))
 }
 
 reddit.requestSearch = (query, subreddit = "", sort = "", after = "", limit = "100", time = "") => {
@@ -50,6 +50,15 @@ reddit.requestSearchNames = (query, exact = false) => {
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.names)
+}
+
+reddit.about = (data) => {
+	return {
+		title:         data.title,
+		icon:          data.icon_img !== "" ? data.icon_img : data.community_icon,
+		banner:        data.banner_background_image,
+		mobile_banner: data.mobile_banner_image,
+	}
 }
 
 reddit.post = (data) => {

@@ -109,29 +109,27 @@ function main() {
 		searchInput.value = ""
 	})
 
-	provider.requestAbout(options.subreddit).then(data => {
-		const iconUrl = data.icon_img !== "" ? data.icon_img : data.community_icon
-		document.title = data.title
+	provider.requestAbout(options.subreddit).then(about => {
+		document.title = about.title
 
 		const favicon = document.getElementById("favicon")
-		favicon.href = iconUrl
+		favicon.href = about.icon
 
 		const banner = document.getElementById("banner")
-		if (data.banner_background_image !== "") {
-			banner.srcset = `${data.banner_background_image} 1x`
+		if (about.banner !== "") {
+			banner.srcset = `${about.banner} 1x`
 
-			if (data.mobile_banner_image !== "") {
-				banner.srcset += `,${data.mobile_banner_image} 2x`
-			}
+			if (about.mobile_banner !== "")
+				banner.srcset += `,${about.mobile_banner} 2x`
 
 			show(banner)
 		}
 
 		const iconImg = document.getElementById("icon-image")
-		iconImg.src = iconUrl
+		iconImg.src = about.icon
 
 		const iconTitle = document.getElementById("icon-title")
-		iconTitle.textContent = data.title
+		iconTitle.textContent = about.title
 	})
 
 	ribbon.addEventListener("click", e => { 
