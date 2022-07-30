@@ -1,4 +1,4 @@
-import { once, hide, show } from "./globals.js"
+import { ago, once, hide, show } from "./globals.js"
 import { observer, lazyload } from "./observe.js"
 import { video } from "./video.js"
 
@@ -6,7 +6,7 @@ export const elements = {}
 
 // Templates
 const t_post      = document.getElementById("post-template").content.firstElementChild
-const t_flair = document.getElementById("flair-template").content.firstElementChild
+const t_flair     = document.getElementById("flair-template").content.firstElementChild
 const t_iframe    = document.getElementById("iframe-template").content
 const t_link      = document.getElementById("post-link-template").content.firstElementChild
 const t_link_icon = document.getElementById("post-link-icon-template").content.firstElementChild
@@ -14,23 +14,66 @@ const t_img       = document.getElementById("img-template").content.firstElement
 const t_album     = document.getElementById("album-template").content.firstElementChild
 const t_comment   = document.getElementById("comment-template").content.firstElementChild
 
-elements.post = (title_text, body, link, score, flair) => {
-	const div = t_post.cloneNode(true)
-	const title = div.querySelector(".post-title")
+elements.sortButton = (title, symbol, onclick) => {
+	const div = document.createElement("div")
+	div.className = "sort-button"
+	div.onclick = onclick
 
-	div.link = link
+	if (symbol) {
+		const $icon = document.createElement("span")
+		$icon.innerText = symbol
+		$icon.className = "sort-icon"
+		div.appendChild($icon)
+	}
 
-	if (score)
-		div.score = score
-
-	if (flair)
-		title.appendChild(flair)
-
-	title.innerHTML += title_text
-
-	div.appendChild(body)
+	if (title) {
+		const $title = document.createElement("span")
+		$title.innerText = title
+		$title.className = "sort-title"
+		div.appendChild($title)
+	}
 
 	return div
+}
+
+elements.post = (title, $content, opts) => {
+	const $t        = t_post.cloneNode(true)
+	const $title    = $t.querySelector(".post-title")
+	const $info     = $t.querySelector(".post-info")
+	const $score    = $info.querySelector(".post-info-score")
+	const $comments = $info.querySelector(".post-info-comments")
+	const $author   = $info.querySelector(".post-info-author")
+
+	if (opts.score) {
+		$score.textContent = formatScore(opts.score)
+	}
+	else hide($score)
+
+	if (opts.comments) {
+		$comments.textContent = opts.comments
+	}
+	else hide($comments)
+
+	if (opts.author) {
+		const $a = $author.querySelector("a")
+		$a.href = `https://reddit.com${opts.author}`
+		$a.innerText = opts.author
+	}
+	else hide($a)
+
+	if (opts.date) {
+		$author.innerHTML += " " + ago(opts.date)
+	}
+
+	if (opts.flair) {
+		const $flair = elements.flair(opts.flair.text, opts.flair.fg, opts.flair.bg)
+		$title.appendChild($flair)
+	}
+
+	$title.innerHTML += title
+	$t.replaceChild($content, $t.querySelector(".post-content"))
+
+	return $t
 }
 
 elements.video = video
@@ -68,7 +111,7 @@ elements.comment = (author, html, date) => {
 	title.innerHTML += "  •  " + date
 
 	const authorLink = comment.querySelector(".comment-author")
-	authorLink.href = "https://reddit.com/user/" + author
+	authorLink.href = `https://reddit.com/user/${author}`
 	authorLink.innerText = author
 
 	const content = comment.querySelector(".comment-content")
@@ -157,4 +200,20 @@ function centerInList(list, center) {
 	for (let i = 0; i < list.length; i++) {
 		list[i].style.left = (i - center) * 100 + "%"
 	}
+}
+
+function formatScore(score) {
+	if (score < 0)
+		return NaN
+
+	if (score < 10000)
+		return score
+
+	if (score >= 10000 && score < 100000)
+		return (score / 1000).toFixed(1) + "k"
+
+	if (score >= 100000 && score < 1000000)
+		return Math.trunc(score / 1000) + "k"
+
+	return ""
 }

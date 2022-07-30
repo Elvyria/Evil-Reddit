@@ -3,6 +3,11 @@
 	src: url("../fonts/Symbols-2048-em Nerd Font Complete.woff2") format("woff2");
 }
 
+body {
+	display: inline-block;
+	width: 100%;
+}
+
 #header {
 	/* background-repeat: no-repeat; */
 	/* background-size: 100%; */
@@ -57,19 +62,8 @@
 	width: 200px;
 	height: 200px;
 	border-radius: 50%;
-	background: linear-gradient(to right, #FFF 10%, #FFF0 42%);
+	background: linear-gradient(to right, #aaaaaa60 10%, #FFF0 42%);
 	animation: spinner 1.4s infinite linear;
-}
-
-#spinner::before {
-	content: '';
-	width: 50%;
-	height: 50%;
-	background: #FFF4;
-	border-radius: 100% 0 0 0;
-	position: absolute;
-	top: 0;
-	left: 0;
 }
 
 #spinner::after {
@@ -111,7 +105,6 @@ body::-webkit-scrollbar {
 	opacity: 1;
 }
 
-/* Hidden until redesign */
 #search {
 	position: fixed;
 	bottom: 0;
@@ -120,61 +113,99 @@ body::-webkit-scrollbar {
 	z-index: 1;
 }
 
-#search > input {
-	width: 50px;
-	padding: 10px;
-	border: none;
-	border-radius: 10px 0 0 10px;
-	background-color: #1A1A1B;
-	color: #FFF;
+#search-filters {
+	color: rgb(215, 218, 220);
 	font-family: "Nerd Font";
 	text-align: center;
-	font-size: 1.4em;
+	font-size: 1.2em;
+	opacity: 1;
+}
+
+#search-filters > * {
+	width: 50px;
+	height: 50px;
+	line-height: 50px;
+	border-radius: 100%;
+	background-color: #1A1A1B;
+	margin: 10px;
+	cursor: pointer;
+}
+
+#search > input:focus + #search-filters {
+	opacity: 1;
+}
+
+#search > input {
+	width: 50px;
+	height: 50px;
+	padding: 10px;
+	border: none;
+	border-radius: 100%;
+	background-color: #1A1A1B;
+	color: #FFF;
+	caret-color: gray;
+	font-family: "Nerd Font";
+	text-align: center;
+	font-size: 1.2em;
 	box-shadow: 1px 1px 10px 1px #000;
 	transition: width 300ms;
+	margin: 10px
 }
 
 #search > input:focus {
 	width: 250px;
 	font-family: inherit;
+	border-radius: 30px;
 	outline: none;
 }
 
-#sorting {
-	position: fixed;
-	top: 0;
-	bottom: 0;
-	left: -60px;
-	margin: auto;
-	height: 175px;
+#sortbar {
+	display: flex;
+	width: max-content;
 	color: gray;
+
+	margin: 10px auto auto auto;
 	background-color: rgb(26, 26, 27);
-	padding: 20px;
 
-	border-radius: 0 10px 10px 0;
-	border-right: 2px solid #404040;
-
-	transition: left 300ms;
-	z-index: 1;
+	border-radius: 5px;
 }
 
-#sorting:hover {
-	left: 0;
+#sortbar > :first-child {
+	padding-left: 35px;
 }
 
-#sorting > div {
-	font-family: "Nerd Font";
-	font-size: 2em;
-	text-align: center;
-	line-height: 25px;
-	margin-bottom: 25px;
+#sortbar > :last-child {
+	padding-right: 35px;
+}
+
+.sort-button {
+	padding: 10px 25px;
+	transition: background-color 200ms, color 200ms, scale 200ms;
+}
+
+.sort-button[selected] {
+	color: red;
+}
+
+.sort-button:hover {
 	cursor: pointer;
-	transition: 300ms ease;
-	transform: scale(1.0);
+	background-color: #242424;
+	color: rgb(215, 218, 220);
 }
 
-#sorting > div:hover {
-	transform: scale(1.3);
+.sort-button:active {
+	scale: .7;
+}
+
+.sort-button .sort-icon {
+	font-family: "Nerd Font";
+	font-size: 1.2em;
+	/* cursor: pointer; */
+	/* align-self: center; */
+}
+
+.sort-button .sort-title {
+	margin-left: 7px;
 }
 
 #hot {
@@ -214,8 +245,51 @@ body::-webkit-scrollbar {
 	word-wrap: anywhere;
 }
 
+.post-info {
+    align-items: baseline;
+    color: #777575;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    font-size: 0.85em;
+    justify-content: flex-start;
+	padding: 6px 3px 0px 3px;
+}
+
+.post-info-score {
+	margin-right: 10px;
+}
+
+.post-info-score::after {
+	content: '';
+	font-family: "Nerd Font";
+	color: #a24747;
+
+	margin-left: 7px;
+}
+
+.post-info-comments::after {
+	content: '';
+	font-family: "Nerd Font";
+
+	margin-left: 7px;
+}
+
+.post-info-author {
+	margin-left: auto;
+}
+
+.post-info-author a {
+	display: inline-block;
+	max-width: 22ch;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	text-decoration: none;
+	vertical-align: top;
+}
+
 .flair {
-	font-size: 0.9em;
+	font-size: .9em;
 	display: inline-flex;
 	padding: 2px 8px;
 	line-height: normal;
@@ -272,26 +346,56 @@ body::-webkit-scrollbar {
 	flex-direction: column;
 	justify-content: center;
 	cursor: default;
+	color: #aaaaaa40;
+	transition: color 100ms, scale 300ms;
+}
+
+.iframe-loader:hover {
+	color: #d2d2d2;
+	cursor: pointer;
+}
+
+.iframe-loader:active {
+	scale: 0.9;
 }
 
 .iframe-loader > span {
-	color: white;
 	font-family: "Nerd Font";
 	font-size: 3em;
 	align-self: center;
 }
 
 .iframe-provider {
-	color: white;
 	font-size: 1.2em;
 	align-self: center;
+}
+
+.video-sound-state {
+	content: ''; /* placeholder */
+	content: ''; /* placeholder */
+	color: #fff8f8;
+	font-family: "Nerd Font";
+	width: 30px;
+	height: 30px;
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	line-height: 30px;
+	font-size: 30px;
+	margin: 10px;
+
+	opacity: 0;
+}
+
+.video-sound-state:hover {
+	opacity: 1;
 }
 
 .external-link {
 	position: relative;
 	overflow: hidden;
 	white-space: nowrap;
-	font-size: 0.9em
+	font-size: .9em
 }
 
 .external-link > img {

@@ -1,52 +1,94 @@
 export const reddit = {}
 
-const providerHost = "https://www.reddit.com"
-const apiQuery = ".json?raw_json=1"
+const host = "https://www.reddit.com"
+const api = ".json?raw_json=1"
 
-reddit.sortMethods = {
-	subreddit: ["hot", "new", "top", "rising"],
-	time:      ["hour", "day", "week", "month", "year", "all"],
-	comments:  ["confidence", "top", "new", "controversial", "old", "qa"],
-	search:    ["relevance", "hot", "top", "new", "comments"],
+reddit.sort = {
+	general: {
+		hot:           { query: "hot",           name: "Hot",           icon: ""  },
+		new:           { query: "new",           name: "New",           icon: ""  },
+		top:           { query: "top",           name: "Top",           icon: ""  },
+		rising:        { query: "rising",        name: "Rising",        icon: "勤" },
+	},
+	comments: {
+		confidence:    { query: "confidence",    name: "",              icon: ""   },
+		top:           { query: "top",           name: "Top",           icon: ""   },
+		new:           { query: "new",           name: "New",           icon: ""   },
+		controversial: { query: "controversial", name: "Controversial", icon: ""   },
+		old:           { query: "old",           name: "Old",           icon: ""   },
+		qa:            { query: "qa",            name: "",              icon: ""   }
+	},
+	search: {
+        relevance:     { query: "relevance",     name: "Relevance",     icon: ""   },
+        hot:           { query: "hot",           name: "Hot",           icon: ""   },
+        top:           { query: "top",           name: "Top",           icon: ""   },
+        new:           { query: "new",           name: "New",           icon: ""   },
+        comments:      { query: "comments",      name: "Most Comments", icon: ""   }
+	},
 }
 
-reddit.requestPosts = (subreddit, sort, after = "", limit = "100", time = "") => {
-	if (!reddit.sortMethods.subreddit.includes(sort))
-		sort = reddit.sortMethods.subreddit[0]
+reddit.sort.general.default  = reddit.sort.general.hot,
+reddit.sort.comments.default = reddit.sort.comments.new,
+reddit.sort.search.default   = reddit.sort.search.relevance,
 
-	const url = `${providerHost}/r/${subreddit}/${sort}/${apiQuery}&after=${after}&limit=${limit}&t=${time}`;
+reddit.requestPosts = (subreddit, sort = reddit.sort.general.default, after = "", limit = "100", time = "") => {
+	if (!(sort.query in reddit.sort.general)) {
+		console.error("Unexpected sort parameter: ", sort)
+		return
+	}
+
+	const url = new URL(`${subreddit}/${sort.query}/${api}`, host)
+
+	url.searchParams.set("after", after)
+	url.searchParams.set("limit", limit)
+	url.searchParams.set("t",     time)
 
 	return fetch(url)
 		.then(resp => resp.json())
-		.then(json => json.data.children)
+		.then(json => json.data.children.map(child => reddit.post(child.data)))
 }
 
-reddit.requestPost = (permalink, sort) => {
-	if (!reddit.sortMethods.comments.includes(sort))
-		sort = reddit.sortMethods.comments[0]
+reddit.requestPost = (permalink, sort = reddit.sort.comments.default) => {
+	if (!(sort.query in reddit.sort.comments)) {
+		console.error("Unexpected sort parameter: ", sort)
+		return
+	}
 
-	const url = `${providerHost}${permalink}${apiQuery}`
+	const url = new URL(`${permalink}/${api}`, host)
+	url.searchParams.set("sort", sort.query)
 
 	return fetch(url)
 		.then(resp => resp.json())
 }
 
 reddit.requestAbout = (subreddit) => {
-	const url = `${providerHost}/r/${subreddit}/about${apiQuery}`
+	const url = new URL(`${subreddit}/about/${api}`, host)
+
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => reddit.about(json.data))
 }
 
-reddit.requestSearch = (query, subreddit = "", sort = "", after = "", limit = "100", time = "") => {
-	const url = `${providerHost}/r/${subreddit}/search/${apiQuery}&q=${query}&after=${after}&restrict_sr=1&limit=${limit}&t=${time}&include_over_18=on`
+reddit.requestSearch = (query, subreddit = "", sort = reddit.sort.search.default, after = "", limit = "100", time = "") => {
+	const url = new URL(`${subreddit}/search/${api}`, host)
+
+	url.searchParams.set("q",     query)
+	url.searchParams.set("t",     time)
+	url.searchParams.set("after", after)
+	url.searchParams.set("limit", limit)
+	url.searchParams.set("restrict_sr", 1)
+	url.searchParams.set("include_over_18", "on")
+
 	return fetch(url)
 		.then(resp => resp.json())
-		.then(json => json.data.children)
+		.then(json => json.data.children.map(child => reddit.post(child.data)))
 }
 
 reddit.requestSearchNames = (query, exact = false) => {
-	const url = `${providerHost}/api/search_reddit_names${apiQuery}&query=${query}&exact=${exact}`
+	const url = new URL(`/api/search_reddit_names/${api}`, host)
+	url.searchParams.set("query", query)
+	url.searchParams.set("exact", exact)
+
 	return fetch(url)
 		.then(resp => resp.json())
 		.then(json => json.names)
@@ -63,25 +105,28 @@ reddit.about = (data) => {
 
 reddit.post = (data) => {
 	const post = {
-		name:      data.name,
-		score:     data.score,
-		permalink: data.permalink,
-		title:     data.title,
-		hint:      data.post_hint,
-		html:      data.selftext_html,
-		preview:   data.preview ? data.preview.images[0] : undefined,
-		gallery:   data.is_gallery && data.media_metadata ? Object.values(data.media_metadata).filter(entry => entry.status === "valid") : undefined,
-		media:     data.media && data.media.reddit_video ? reddit.media(data.media.reddit_video) : data.media,
-		url:       data.url,
+		author:       data.author,
+		date:         new Date(data.created_utc * 1000),
+		name:         data.name,
+		score:        data.score,
+		permalink:    data.permalink,
+		title:        data.title,
+		hint:         data.post_hint,
+		html:         data.selftext_html,
+		preview:      data.preview ? data.preview.images[0] : undefined,
+		gallery:      data.is_gallery && data.media_metadata ? Object.values(data.media_metadata).filter(entry => entry.status === "valid") : undefined,
+		media:        data.media && data.media.reddit_video ? reddit.media(data.media.reddit_video) : data.media,
+		num_comments: data.num_comments,
+		url:          data.url,
 		thumbnail: {
-			url: data.thumbnail,
+			url:    data.thumbnail,
 			height: data.thumbnail_height,
-			width: data.thumbnail_width,
+			width:  data.thumbnail_width,
 		},
 		flair: data.link_flair_text === null ? undefined : {
 			text: data.link_flair_text,
-			fg: data.link_flair_text_color,
-			bg: data.link_flair_background_color,
+			fg:   data.link_flair_text_color,
+			bg:   data.link_flair_background_color,
 		},
 	}
 

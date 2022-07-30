@@ -1,9 +1,9 @@
 import "./array.js"
 import "./hotkeys.js"
-import { once, scale, hide, show, wrap, empty } from "./globals.js"
+import { ago, once, hide, show, empty } from "./globals.js"
 import { observer, lazyload } from "./observe.js"
 import { reddit as provider } from "./providers/reddit.js"
-import { gfycat, redgifs } from "./external.js"
+import { content } from "./content.js"
 
 import { elements } from "./elements.js"
 
@@ -15,17 +15,19 @@ const spinner  = document.getElementById("spinner")
 const overlay  = document.getElementById("overlay")
 const fullPost = document.getElementById("full-post")
 const comments = document.getElementById("comments")
+const sortbar  = document.getElementById("sortbar")
 
-//TODO: Calculate from style
+const searchInput = document.querySelector("#search input")
+
 const postWidth = 400
+let clickDistance = 0
 
-//TODO: Rename me
-let options = {
+let state = {
 	subreddit:    "",
 	fullPost:     false,
 	search:       "",
-	sortComments: provider.sortMethods.comments[0],
-	sortSub:      provider.sortMethods.subreddit[0],
+	sort:         provider.sort.general[0],
+	sortComments: provider.sort.comments[0],
 }
 
 const brick = Bricks({
@@ -42,63 +44,75 @@ const brick = Bricks({
 
 }).resize(true).pack()
 
-let clickDistance = 0
+;(function() {
 
-main()
+	window.scrollTo({ top: 0, behavior: 'smooth' })
+	searchInput.value = ""
 
-function main() {
+	initListeners()
 
+	state = parseUrl(new URL(document.location))
+
+	const bannerLink = document.getElementById("banner-link")
+	bannerLink.href = `/r/${state.subreddit}`
+
+	// Create sort buttons
+	Object.entries(provider.sort.general)
+		.filter(([key, _]) => key !== "default")
+		.map(([_, value]) => elements.sortButton(value.name, value.icon, () => sort(value)))
+		.forEach(Node.prototype.appendChild, sortbar)
+
+	provider.requestAbout(state.subreddit).then(updateHeader)
+
+	if (state.fullPost) {
+		provider.requestPost(window.location.pathname, state.sortComments).then(data => {
+			const post = provider.post(data[0].data.children[0].data)
+
+			const div = elements.post(p.title, content(p), {
+				author:   `/u/${post.author}`,
+				comments: post.num_comments,
+				date:     post.date,
+				flair:    post.flair,
+				score:    post.score,
+			})
+			div.name = post.name
+			div.link = post.permalink
+
+			const title = div.querySelector(".post-title")
+			const content = div.querySelector(".post-content")
+
+			openFullPost(title, content, post.permalink)
+		})
+	}
+
+	provider.requestPosts(state.subreddit, state.sort).then(posts => {
+		hide(spinner)
+
+		//TODO: Create status element
+		if (posts.length === 0) return
+
+		const more = posts.length >= 100 ? (after) => provider.requestPosts(state.subreddit, state.sort, after) : null
+		addPosts(posts, more)
+	})
+
+})()
+
+function initListeners() {
 	// Calculates cursor move distance between press and release. Inacurate
 	document.addEventListener("mousedown", e => { clickDistance = e.x + e.y })
 	document.addEventListener("mouseup",   e => { clickDistance = Math.abs(clickDistance - e.x - e.y) })
 
-	window.scrollTo({ top: 0, behavior: 'smooth' })
-
-	options = parseUrl(new URL(document.location))
-
-	const bannerLink = document.getElementById("banner-link")
-	bannerLink.href = `/r/${options.subreddit}`
-
-	// Sort buttons
-	Array.from(document.getElementById("sorting").children).forEach((button, i) => {
-		button.onclick = () => {
-			if (options.sortSub === provider.sortMethods.subreddit[i])
-				return
-
-			options.sortSub = provider.sortMethods.subreddit[i]
-
-			provider.requestPosts(options.subreddit, options.sortSub, "", 100).then(posts => {
-				//TODO: Create status element
-				if (posts.length === 0) {
-					return
-				}
-
-				empty(ribbon)
-				window.scrollTo({ top: 0 })
-
-				const more = posts.length >= 100 ? (after) => provider.requestPosts(options.subreddit, options.sortSub, after) : null
-				addPosts(posts, more)
-			})
-
-			history.pushState(null, "", `/r/${options.subreddit}/${options.sortSub}`)
-		}
+	ribbon.addEventListener("click", e => { 
+		if (clickDistance < 10)
+			clickPost(e)
 	})
-
-	fullPost.addEventListener("click", zoom)
-
-	// TODO: History states
-	// window.addEventListener("popstate", (e) => {})
-
-	const searchInput = document.querySelector("input")
-
-	searchInput.value = ""
 
 	searchInput.addEventListener("keydown", e => {
 		if (e.key === "Enter") {
 			const query = searchInput.value.trim()
 
 			if (query.length !== 0) {
-				search(options.subreddit, query)
+				search(state.subreddit, query)
 				searchInput.value = ""
 			}
 		}
@@ -114,60 +128,40 @@ function main() {
 		searchInput.placeholder = searchInput.dataset.placeholder
 		searchInput.value = ""
 	})
+	
+	fullPost.addEventListener("click", zoom)
+}
 
-	provider.requestAbout(options.subreddit).then(about => {
-		document.title = about.title
+function updateHeader(about) {
+	document.title = about.title
 
-		const favicon = document.getElementById("favicon")
-		favicon.href = about.icon
+	const favicon = document.getElementById("favicon")
+	favicon.href = about.icon
 
-		const banner = document.getElementById("banner")
-		if (about.banner !== "") {
-			banner.srcset = `${about.banner} 1x`
+	updateBanner(state.subreddit, about.banner, about.mobile_banner)
 
-			if (about.mobile_banner !== "")
-				banner.srcset += `,${about.mobile_banner} 2x`
+	const iconImg = document.getElementById("icon-image")
+	iconImg.src = about.icon
 
-			show(banner)
-		}
+	const iconTitle = document.getElementById("icon-title")
+	iconTitle.textContent = about.title
+}
 
-		const iconImg = document.getElementById("icon-image")
-		iconImg.src = about.icon
+function updateBanner(branch, image, imageMobile) {
+	const banner = document.getElementById("banner")
 
-		const iconTitle = document.getElementById("icon-title")
-		iconTitle.textContent = about.title
-	})
+	if (image) {
+		banner.srcset = `${image} 1x`
 
-	ribbon.addEventListener("click", e => { 
-		if (clickDistance < 10)
-			clickPost(e)
-	})
+		if (imageMobile)
+			banner.srcset += `,${imageMobile} 2x`
 
-	if (options.fullPost) {
-		provider.requestPost(window.location.pathname, options.sortComments).then(data => {
-			const post = provider.post(data[0].data.children[0].data)
+		const bannerLink = document.getElementById("banner-link")
+		bannerLink.href = branch
 
-			const flair = post.flair ? elements.flair(post.flair.text, post.flair.fg, post.flair.bg) : null
-
-			const div = elements.post(post.title, createContent(post), post.permalink, post.score, flair)
-			div.name = post.name
-
-			const title = div.querySelector(".post-title")
-			const content = div.querySelector(".post-content")
-
-			openFullPost(title, content, post.permalink)
-		})
+		show(banner)
 	}
-
-	provider.requestPosts(options.subreddit, options.sortSub).then(posts => {
-		hide(spinner)
-
-		//TODO: Create status element
-		if (posts.length === 0) return
-
-		const more = posts.length >= 100 ? (after) => provider.requestPosts(options.subreddit, options.sortSub, after) : null
-		addPosts(posts, more)
-	})
+	else hide(banner)
 }
 
 function zoom(event) {
@@ -188,31 +182,44 @@ function zoom(event) {
 	}
 }
 
-function addPosts(data, more) {
-	if (data.length === 0) return
+function sort(method) {
+	if (state.sort === method)
+		return
+
+	state.sort = method
+
+	provider.requestPosts(state.subreddit, state.sort).then(posts => {
+		if (posts.length === 0) return
+
+		empty(ribbon)
+		window.scrollTo({ top: 0 })
+
+		const more = posts.length >= 100 ? (after) => provider.requestPosts(state.subreddit, state.sort, after) : null
+		addPosts(posts, more)
+	})
+
+	history.pushState(null, "", `${state.subreddit}/${state.sort.query}`)
+}
+
+function addPosts(posts, more) {
+	if (posts.length === 0) return
 
 	const frag = document.createDocumentFragment()
 
-	let accum = 0
+	posts.forEach(p => {
+		const div = elements.post(p.title, content(p), {
+			author:   `/u/${p.author}`,
+			comments: p.num_comments,
+			date:     p.date,
+			flair:    p.flair,
+			score:    p.score,
+		})
 
-	data.forEach(child => {
-		const post = provider.post(child.data)
-		accum += post.score
-
-		const flair = post.flair ? elements.flair(post.flair.text, post.flair.fg, post.flair.bg) : null
-
-		const div = elements.post(post.title, createContent(post), post.permalink, post.score, flair)
-		div.name = post.name
+		div.name = p.name
+		div.permalink = p.permalink
 
 		frag.appendChild(div)
 	})
-
-	const average = accum / frag.children.length
-
-	for (const post of frag.children) {
-		if (post.score > average * 1.5)
-			post.classList.add("ribbon-post-top")
-	}
 
 	if (more) {
 		const lastChild = frag.lastChild
@@ -239,8 +246,7 @@ function addPosts(data, more) {
 function clickPost(event) {
 	const post = event.target.closest(".ribbon-post")
 
-	if (post)
-	{
+	if (post) {
 		hide(post)
 
 		const title = post.getElementsByClassName("post-title")[0]
@@ -258,24 +264,32 @@ function parseUrl(url) {
 	const parts = url.pathname.split('/')
 
 	const result = {
-		subreddit:    parts[2],
+		subreddit:    `/r/${parts[2]}`,
 		fullPost:     parts[3] === "comments",
 		search:       url.searchParams.get("q"),
-		sortSub:      provider.sortMethods.subreddit[0],
-		sortComments: provider.sortMethods.comments[0],
+		sort:      provider.sort.general.default,
+		sortComments: provider.sort.comments.default,
 	}
 
 	if (result.fullPost) {
-		result.sortComments = url.searchParams.get("sort") ?? provider.sortMethods.comments[0]
-	} else {
-		result.sortSub = provider.sortMethods.subreddit.includes(parts[3]) ? parts[3] : provider.sortMethods.subreddit[0]
+		const sort = url.searchParams.get("sort")
+
+		result.sortComments = Object.keys(provider.sort.comments).includes(sort) ?
+			provider.sort.comments[sort] : provider.sort.comments.default
+	}
+	else {
+		const sort = parts[3]
+
+		result.sort = Object.keys(provider.sort.general).includes(sort) ?
+			provider.sort.general[sort] : provider.sort.general.default
 	}
 
 	return result
 }
 
+//TODO: Search by content type (video, image, text, links?)
 function search(subreddit, query) {
-	history.pushState(null, "", `/r/${options.subreddit}/search/?q=${query}`)
+	history.pushState(null, "", `${state.subreddit}/search/?q=${query}`)
 
 	return provider.requestSearch(query, subreddit, "", "", 100).then(posts => {
 		empty(ribbon)
@@ -366,160 +380,6 @@ function addComment(fragment, data, level = 0) {
 				addComment(fragment, child.data, level + 1)
 		})
 	}
-}
-
-function createContent(post) {
-	const content = document.createElement("div")
-	content.className = "post-content"
-
-	switch (post.hint) {
-		case "image": {
-			let thumbnail = post.thumbnail.url
-			let source = post.url
-
-			if (post.preview && post.preview.resolutions.length > 0)
-				thumbnail = post.preview.resolutions.last_or(3).url
-
-			content.appendChild(elements.image(thumbnail, source))
-			content.style.height = scale(post.preview.source.height, post.preview.source.width, postWidth) + "px"
-
-			break
-		}
-		case "gif": {
-			let urls = { hd: post.preview.variants.mp4.source.url }
-
-			if (post.preview.variants.mp4.resolutions.length > 0)
-				urls.sd = post.preview.variants.mp4.resolutions.last_or(3).url
-
-			content.appendChild(elements.video(urls))
-			content.style.height = scale(post.preview.source.height, post.preview.source.width, postWidth) + "px"
-
-			break
-		}
-		case "gallery": {
-			if (post.gallery.length === 0)
-				break
-
-			const images = post.gallery.map(entry => createGalleryElement(entry))
-
-			content.appendChild(elements.album(images))
-			content.style.height = scale(post.gallery[0].s.y, post.gallery[0].s.x, postWidth) + "px"
-
-			break
-		}
-		case "video": {
-			let poster = post.preview.source.url
-
-			if (post.preview.resolutions.length > 0)
-				poster = post.preview.resolutions.last_or(3).url
-
-			content.appendChild(elements.video(post.media, poster, true))
-
-			content.style.height = scale(post.media.height, post.media.width, postWidth) + "px"
-
-			break
-		}
-		case "iframe:gfycat": {
-			const video = elements.video(() => gfycat(post.media.oembed.thumbnail_url))
-			content.appendChild(video)
-
-			content.style.height = scale(post.media.oembed.thumbnail_height, post.media.oembed.thumbnail_width, postWidth) + "px"
-
-			break
-		}
-		case "iframe:redgifs": {
-			const video = elements.video(() => redgifs(post.url), post.preview.source.url)
-
-			content.appendChild(video)
-			content.style.height = scale(post.preview.source.height, post.preview.source.width, postWidth) + "px"
-
-			break
-		}
-		case "iframe": {
-			const div = document.createElement("div")
-			div.innerHTML = post.media.oembed.html
-
-			content.appendChild(elements.iframe(div.firstElementChild.src))
-
-			content.style.height = scale(post.media.oembed.height, post.media.oembed.width, postWidth) + "px"
-
-			break
-		}
-		case "link": {
-			if (post.preview) {
-				let thumbnail = post.thumbnail.url
-				let source = post.preview.source.url
-
-				if (post.preview.resolutions.length > 0)
-					thumbnail = post.preview.resolutions.last_or(3).url
-
-				content.appendChild(elements.link(post.url, elements.image(thumbnail, source)))
-				content.style.height = scale(post.preview.source.height, post.preview.source.width, postWidth) + "px"
-
-			} else content.appendChild(elements.link(post.url))
-
-			break
-		}
-		case "html": {
-			content.innerHTML += post.html
-
-			// Remove SC_ON / SC_OFF commments
-			content.childNodes[0].remove()
-			content.childNodes[1].remove()
-
-			break
-		}
-	}
-
-	return content
-}
-
-function createGalleryElement(entry) {
-	let element
-
-	switch (entry.m) {
-		case "image/gif":
-			element = entry.s.mp4 ?
-				elements.video({ sd: entry.s.mp4 }) : elements.image(entry.s.gif)
-
-			break
-		default:
-			element = entry.p.length === 0 ?
-				elements.image(entry.s.u) : elements.image(entry.p.last_or(3).u, entry.s.u)
-	}
-
-	return wrap(element, "li")
-}
-
-function ago(date) {
-	const suffix = (n) => {
-		if (n > 1) {
-			return "s ago"
-		}
-
-		return " ago"
-	}
-
-	let n = Math.floor((new Date() - date) / 1000)
-	const result = (n, unit) => n + unit + suffix(n)
-
-	if (n < 60) return result(n, " second")
-
-	n = Math.floor(n / 60)
-	if (n < 60) return result(n, " minute")
-
-	n = Math.floor(n / 60)
-	if (n < 24) return result(n, " hour")
-
-	n = Math.floor(n / 24)
-	if (n < 365) return result(n, " day")
-
-	return result(Math.floor(n / 365), " year")
-}
-
-function showSearch() {
-	show(overlay)
-	document.body.style.overflow = "hidden"
 }
 
 function openOverlay() {

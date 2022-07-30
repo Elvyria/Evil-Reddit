@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Evil-Reddit</title>
 		<link id="favicon" rel="shortcut icon" href="data:," type="image/png"/>
 		<link rel="stylesheet" href="/css/reddit.css" type="text/css" media="all">
@@ -20,16 +20,7 @@
 				<img id="icon-image"/>
 				<span id="icon-title"></span>
 			</div>
-			<div id="search">
-				<input type="search" placeholder="" data-placeholder="" data-value="">
-				<div id="search-tags"></div>
-			</div>
-			<div id="sorting">
-				<div id="hot"></div><!-- Hot -->
-				<div id="new"></div><!-- New -->
-				<div id="top"></div><!-- Top -->
-				<div id="rising">勤</div><!-- Rising -->
-			</div>
+			<div id="sortbar"></div>
 		</div>
 
 		<div id="status">
@@ -45,9 +36,24 @@
 			<div id="comments"> </div>
 		</div>
 
+		<div id="search">
+			<div id="search-filters">
+				<div id="search-filters-text"></div>
+				<div id="search-filters-image"></div>
+				<div id="search-filters-video"></div>
+			</div>
+			<input type="search" placeholder="" data-placeholder="" data-value="">
+		</div>
+
 		<template id="post-template">
 			<div class="ribbon-post">
 				<div class="post-title"></div>
+				<div class="post-content"></div>
+				<div class="post-info">
+					<div class="post-info-score"></div>
+					<div class="post-info-comments"></div>
+					<div class="post-info-author"><a href=""></a></div>
+				</div>
 			</div>
 		</template>
 
@@ -66,7 +72,7 @@
 		<template id="iframe-template">
 			<iframe referrerpolicy="no-referrer" allowfullscreen></iframe>
 			<div class="iframe-loader">
-				<span>勒</span>
+				<span></span>
 				<div class="iframe-provider"></div>
 			</div>
 		</template>
