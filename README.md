@@ -11,7 +11,7 @@
   </p>
   <p>
     <a href="https://github.com/Elvyria/Evil-Reddit/actions?query=workflow:Build">
-      <img alt="Build Status" src="https://img.shields.io/github/workflow/status/Elvyria/Evil-Reddit/Build?style=for-the-badge">
+      <img alt="Build Status" src="https://img.shields.io/github/actions/workflow/status/Elvyria/Evil-Reddit/build.yml?style=for-the-badge">
     </a>
     <a href="https://evil-reddit.web.app/r/unixporn">
       <img alt="Website" src="https://img.shields.io/website?down_message=red&label=demo&style=for-the-badge&up_color=orange&up_message=outdated&url=https%3A%2F%2Fevil-reddit.web.app%2Fr%2Funixporn">
